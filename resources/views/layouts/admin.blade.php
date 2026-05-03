@@ -111,12 +111,11 @@
                     <li class="nav-header">REPORTS</li>
 
                     <li class="nav-item">
-                        <a href="#" class="nav-link">
+                        <a href="{{ route('statistics') }}" class="nav-link {{ request()->routeIs('statistics') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-chart-bar"></i>
                             <p>Statistics</p>
                         </a>
-                    </li>
-
+                    </li>                    
                 </ul>
             </nav>
         </div>
@@ -169,7 +168,7 @@
 
     <!-- Footer -->
     <footer class="main-footer">
-        <strong>Copyright &copy; 2024 <a href="#">BRIN Satellite Team</a>.</strong>
+        <strong>Copyright &copy; 2026 <a href="#">BRIN Satellite Team</a>.</strong>
         All rights reserved.
         <div class="float-right d-none d-sm-inline-block">
             <b>Version</b> 1.0.0
