@@ -11,26 +11,33 @@
 
 @section('content')
     <div class="row">
-        <div class="col-md-4">
-            <div class="card">
+        <!-- LEFT COLUMN -->
+        <div class="col-md-4 d-flex flex-column">
+            
+            <!-- IMAGE CARD -->
+            <div class="card flex-fill">
                 <div class="card-header">
                     <h3 class="card-title">Satellite Image</h3>
                 </div>
-                <div class="card-body text-center">
+                <div class="card-body text-center d-flex align-items-center justify-content-center">
+                    
                     @if($satellite->image)
                         <img src="{{ asset('storage/' . $satellite->image) }}" 
                              alt="{{ $satellite->name }}" 
-                             class="img-fluid rounded">
+                             class="img-fluid rounded"
+                             style="max-height: 250px; object-fit: cover;">
                     @else
-                        <div class="text-muted py-5">
+                        <div class="text-muted d-flex flex-column justify-content-center align-items-center" style="height: 250px;">
                             <i class="fas fa-satellite fa-5x"></i>
                             <p class="mt-3">No image available</p>
                         </div>
                     @endif
+
                 </div>
             </div>
 
-            <div class="card">
+            <!-- QUICK INFO CARD -->
+            <div class="card flex-fill mt-3">
                 <div class="card-header">
                     <h3 class="card-title">Quick Info</h3>
                 </div>
@@ -60,8 +67,9 @@
             </div>
         </div>
 
-        <div class="col-md-8">
-            <div class="card">
+        <!-- RIGHT COLUMN -->
+        <div class="col-md-8 d-flex">
+            <div class="card flex-fill">
                 <div class="card-header">
                     <h3 class="card-title">Satellite Information</h3>
                     <div class="card-tools">
@@ -73,6 +81,7 @@
                         </a>
                     </div>
                 </div>
+
                 <div class="card-body">
                     <table class="table table-borderless">
                         <tr>
@@ -138,6 +147,7 @@
                             <small><i class="fas fa-edit"></i> Updated: {{ $satellite->updated_at->format('d M Y H:i') }}</small>
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>
