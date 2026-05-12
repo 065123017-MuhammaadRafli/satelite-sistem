@@ -57,7 +57,8 @@ class SatelliteController extends Controller
             'country' => 'required|string|max:255',
             'launch_date' => 'required|date',
             'orbit_type' => 'required|in:LEO,MEO,GEO',
-            'tle' => 'nullable|string',
+            'tle_line1' => 'nullable|string|size:69', 
+            'tle_line2' => 'nullable|string|size:69', 
             'status' => 'required|in:active,inactive',
             'description' => 'nullable|string',
             'ground_station_id' => 'nullable|exists:ground_stations,id',
@@ -92,7 +93,8 @@ class SatelliteController extends Controller
             'country' => 'required|string|max:255',
             'launch_date' => 'required|date',
             'orbit_type' => 'required|in:LEO,MEO,GEO',
-            'tle' => 'nullable|string',
+            'tle_line1' => 'nullable|string|size:69', 
+            'tle_line2' => 'nullable|string|size:69', 
             'status' => 'required|in:active,inactive',
             'description' => 'nullable|string',
             'ground_station_id' => 'nullable|exists:ground_stations,id',
@@ -122,5 +124,16 @@ class SatelliteController extends Controller
 
         return redirect()->route('satellites.index')
             ->with('success', 'Satellite deleted successfully!');
+    }
+    
+    public function liveTracking()
+    {
+        // Mengambil semua satelit aktif yang TLE-nya terisi
+        $satellites = Satellite::active()
+            ->whereNotNull('tle_line1')
+            ->whereNotNull('tle_line2')
+            ->get();
+
+        return view('satellites.live', compact('satellites'));
     }
 }

@@ -14,7 +14,8 @@ return new class extends Migration
             $table->string('country');
             $table->date('launch_date');
             $table->enum('orbit_type', ['LEO', 'MEO', 'GEO']);
-            $table->text('tle')->nullable();
+            $table->char('tle_line1', 69)->nullable();
+            $table->char('tle_line2', 69)->nullable();
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->text('description')->nullable();
             $table->string('image')->nullable();

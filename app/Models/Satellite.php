@@ -14,7 +14,8 @@ class Satellite extends Model
         'country',
         'launch_date',
         'orbit_type',
-        'tle',
+        'tle_line1', // Ubah ini
+        'tle_line2', // Ubah ini
         'status',
         'description',
         'image',
@@ -25,13 +26,11 @@ class Satellite extends Model
         'launch_date' => 'date',
     ];
 
-    // Relasi: Satellite belongs to Ground Station
     public function groundStation()
     {
         return $this->belongsTo(GroundStation::class);
     }
 
-    // Query Scopes
     public function scopeActive($query)
     {
         return $query->where('status', 'active');
