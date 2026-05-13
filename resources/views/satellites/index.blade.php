@@ -20,7 +20,6 @@
         </div>
 
         <div class="card-body">
-            <!-- Search & Filter -->
             <form method="GET" action="{{ route('satellites.index') }}" class="mb-3">
                 <div class="row">
                     <div class="col-md-3">
@@ -62,7 +61,6 @@
                 </div>
             </form>
 
-            <!-- Table -->
             <div class="table-responsive">
                 <table class="table table-bordered table-hover">
                     <thead class="thead-light">
@@ -86,7 +84,9 @@
                                 </td>
                                 <td>{{ $satellite->country }}</td>
                                 <td><span class="badge badge-info">{{ $satellite->orbit_type }}</span></td>
-                                <td>{{ $satellite->launch_date->format('d M Y') }}</td>
+                                
+                                <td>{{ $satellite->launch_date->format('Y-m-d') }}</td>
+                                
                                 <td>
                                     @if($satellite->groundStation)
                                         {{ $satellite->groundStation->name }}
@@ -115,6 +115,13 @@
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </form>
+                                    
+                                    <form action="{{ route('satellites.sync-tle', $satellite) }}" method="POST" class="d-inline" onsubmit="return confirm('Tarik data TLE terbaru untuk {{ $satellite->name }}?')">
+                                        @csrf
+                                        <button type="submit" class="btn btn-success btn-sm" title="Update TLE dari Server">
+                                            <i class="fas fa-sync-alt"></i>
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
                         @empty
@@ -126,7 +133,6 @@
                 </table>
             </div>
 
-            <!-- Pagination -->
             <div class="mt-3">
                 {{ $satellites->links() }}
             </div>

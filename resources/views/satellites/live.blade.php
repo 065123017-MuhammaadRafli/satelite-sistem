@@ -35,14 +35,18 @@
 
         @keyframes pulse-generic {
             0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
+            70% { transform: scale(1); box-shadow: 0 0 0 50px rgba(255, 255, 255, 0); }
             100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
         }
 
-        /* Scrollbar untuk menu Dropdown Filter */
+        /* Scrollbar Filter */
         .dropdown-menu-filter { max-height: 400px; overflow-y: auto; }
         .dropdown-menu-filter::-webkit-scrollbar { width: 6px; }
         .dropdown-menu-filter::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+
+        /* Efek Hover untuk Kartu Satelit yang bisa diklik */
+        .sat-card-clickable { transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; }
+        .sat-card-clickable:hover { transform: translateY(-4px); box-shadow: 0 6px 12px rgba(0,0,0,0.15) !important; }
     </style>
 @endpush
 
@@ -50,8 +54,8 @@
 
     <div class="row" id="stat-cards-container">
         @foreach($satellites as $sat)
-        <div class="col-md-4 col-sm-6 stat-card-wrapper" id="wrapper-{{ $sat->id }}">
-            <div class="card shadow-sm border-0 mb-3" id="card-{{ $sat->id }}" style="border-top: 4px solid #333;">
+        <div class="col-md-4 col-sm-6 stat-card-wrapper" id="wrapper-{{ $sat->id }}" style="display: none;">
+            <div class="card shadow-sm border-0 mb-3 sat-card-clickable" id="card-{{ $sat->id }}" style="border-top: 4px solid #333;" onclick="focusSatellite({{ $sat->id }})" title="Klik untuk mencari satelit di peta">
                 <div class="card-body p-3">
                     <h6 class="font-weight-bold mb-2"><i class="fas fa-satellite mr-1"></i> {{ $sat->name }}</h6>
                     
@@ -66,7 +70,6 @@
                             <span id="epoch-{{ $sat->id }}" class="small font-weight-bold text-dark ml-1">Loading...</span>
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>
@@ -78,20 +81,19 @@
             <h3 class="card-title m-0"><i class="fas fa-map-marked-alt text-warning mr-2"></i> Global Tracking</h3>
             
             <div class="ml-auto d-flex">
-                
                 <div class="dropdown mr-2">
                     <button class="btn btn-sm btn-outline-warning dropdown-toggle" type="button" id="filterDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <i class="fas fa-filter"></i> Filter
                     </button>
                     <div class="dropdown-menu dropdown-menu-right p-3 dropdown-menu-filter" aria-labelledby="filterDropdown" style="width: 280px;" onclick="event.stopPropagation()">
                         <div class="custom-control custom-checkbox mb-3 pb-2 border-bottom">
-                            <input class="custom-control-input" type="checkbox" id="checkAll" checked>
+                            <input class="custom-control-input" type="checkbox" id="checkAll">
                             <label for="checkAll" class="custom-control-label font-weight-bold">Tampilkan Semua</label>
                         </div>
                         <div id="satellite-checkboxes">
                             @foreach($satellites as $sat)
                             <div class="custom-control custom-switch mb-2">
-                                <input type="checkbox" class="custom-control-input sat-checkbox" id="chk-{{ $sat->id }}" value="{{ $sat->id }}" checked>
+                                <input type="checkbox" class="custom-control-input sat-checkbox" id="chk-{{ $sat->id }}" value="{{ $sat->id }}">
                                 <label class="custom-control-label" style="cursor: pointer;" for="chk-{{ $sat->id }}">
                                     {{ $sat->name }}
                                 </label>
@@ -117,14 +119,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/4.0.0/satellite.min.js"></script>
 
     <script>
-        let map; // Deklarasi map di luar agar tombol Reset View berfungsi
+        let map; 
+        let trackers = {}; // Deklarasi global agar bisa diakses fungsi focusSatellite
 
         document.addEventListener('DOMContentLoaded', function () {
             
-            // 1. Inisialisasi Peta
             var bounds = [[-90, -Infinity], [90, Infinity]]; 
             map = L.map('globalSatelliteMap', {
-                minZoom: 1.5, maxBounds: bounds, maxBoundsViscosity: 1.0,
+                minZoom: 1, maxBounds: bounds, maxBoundsViscosity: 1.0,
                 worldCopyJump: true, center: [0, 0], zoom: 2, zoomSnap: 0.5, zoomDelta: 0.5
             });
 
@@ -137,34 +139,25 @@
 
             const satellites = @json($satellites);
             const colors = ['#ff3333', '#00ff00', '#3366ff', '#ffff00', '#ff00ff', '#00ffff'];
-            let trackers = {};
 
-            // 2. Parser TLE Epoch (Mengubah string TLE Line 1 menjadi Tanggal + Detik)
             function parseTLEEpoch(tleLine1) {
                 try {
                     let yearPart = tleLine1.substring(18, 20);
                     let dayPart = tleLine1.substring(20, 32);
                     let year = parseInt(yearPart, 10);
                     let days = parseFloat(dayPart);
-                    
                     year = (year < 57) ? year + 2000 : year + 1900;
-                    
                     let date = new Date(Date.UTC(year, 0, 1)); 
                     date.setUTCMilliseconds((days - 1) * 24 * 60 * 60 * 1000);
-                    
-                    // Format output: YYYY-MM-DD HH:MM:SS UTC (sudah termasuk detik)
-                    return date.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+                    return date.toISOString().replace('T', ' ').substring(0, 23) + ' UTC';
                 } catch (e) {
                     return "Invalid TLE Data";
                 }
             }
 
-            // 3. Persiapan Marker, Garis Orbit, dan UI Awal
             satellites.forEach((sat, index) => {
                 let color = colors[index % colors.length];
                 document.getElementById('card-' + sat.id).style.borderTopColor = color;
-
-                // Tampilkan TLE Epoch di Kartu
                 document.getElementById(`epoch-${sat.id}`).innerText = parseTLEEpoch(sat.tle_line1);
 
                 let customIcon = L.divIcon({
@@ -178,14 +171,14 @@
                     iconSize: [0, 0], iconAnchor: [0, 0]
                 });
 
+                // PERUBAHAN: Menghapus .addTo(map) di sini agar peta bersih di awal
                 trackers[sat.id] = {
-                    marker: L.marker([0, 0], {icon: customIcon}).addTo(map),
-                    line: L.polyline([], {color: color, weight: 2, opacity: 0.6}).addTo(map),
+                    marker: L.marker([0, 0], {icon: customIcon}), 
+                    line: L.polyline([], {color: color, weight: 2, opacity: 0.6}),
                     satrec: satellite.twoline2satrec(sat.tle_line1, sat.tle_line2)
                 };
             });
 
-            // 4. Logika Filter Checkbox Dropdown
             function toggleSatellite(id, isVisible) {
                 if (isVisible) {
                     trackers[id].marker.addTo(map);
@@ -215,12 +208,10 @@
                 });
             });
 
-            // 5. Fungsi Utama Kalkulasi Posisi & Kecepatan (SGP4)
             function updatePositions() {
                 const now = new Date();
 
                 satellites.forEach(sat => {
-                    // Hemat RAM: Abaikan kalkulasi jika satelit tidak dicentang (Filter)
                     if (!document.getElementById('chk-' + sat.id).checked) return; 
 
                     const satrec = trackers[sat.id].satrec;
@@ -233,20 +224,16 @@
                         const lng = satellite.degreesLong(positionGd.longitude);
                         const alt = positionGd.height;
 
-                        // Kalkulasi Kecepatan (Akar dari X^2 + Y^2 + Z^2)
                         const v = positionAndVelocity.velocity;
                         const speed = Math.sqrt(Math.pow(v.x, 2) + Math.pow(v.y, 2) + Math.pow(v.z, 2));
 
-                        // Update UI Kartu
                         document.getElementById(`lat-${sat.id}`).innerText = lat.toFixed(3) + '°';
                         document.getElementById(`lng-${sat.id}`).innerText = lng.toFixed(3) + '°';
                         document.getElementById(`alt-${sat.id}`).innerText = alt.toFixed(0);
                         document.getElementById(`vel-${sat.id}`).innerText = speed.toFixed(3);
 
-                        // Pindahkan Marker
                         trackers[sat.id].marker.setLatLng([lat, lng]);
 
-                        // Hitung Garis Orbit Utuh (Masa Lalu & Masa Depan)
                         let pathSegments = [];
                         let currentSegment = [];
                         let lastLng = null;
@@ -260,7 +247,6 @@
                                 let pLat = satellite.degreesLat(calcGd.latitude);
                                 let pLng = satellite.degreesLong(calcGd.longitude);
 
-                                // Anti-meridian fix (mencegah garis lurus menyilang peta)
                                 if (lastLng !== null && Math.abs(pLng - lastLng) > 180) {
                                     pathSegments.push(currentSegment);
                                     currentSegment = [];
@@ -281,14 +267,24 @@
             setTimeout(() => map.invalidateSize(), 500);
         });
 
-        // FUNGSI TOMBOL RESET VIEW
         function resetMapView() {
-            if(map) {
-                map.setView([0, 0], 2);
+            if(map) { map.setView([0, 0], 1); }
+        }
+
+        // FUNGSI BARU: Langsung menuju ke satelit saat kartu diklik
+        function focusSatellite(id) {
+            if (map && trackers[id]) {
+                let pos = trackers[id].marker.getLatLng();
+                // Hanya bergeser jika koordinatnya valid (bukan 0,0)
+                if (pos.lat !== 0 && pos.lng !== 0) {
+                    map.flyTo(pos, 4, {
+                        animate: true,
+                        duration: 1.5 // Animasi pergerakan peta 1.5 detik
+                    });
+                }
             }
         }
 
-        // Helper Konversi Warna HEX ke RGB (Untuk efek pendaran marker)
         function hexToRgb(hex) {
             var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
             return result ? parseInt(result[1], 16) + ',' + parseInt(result[2], 16) + ',' + parseInt(result[3], 16) : '255,255,255';

@@ -13,10 +13,12 @@ Auth::routes();
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/statistics', [DashboardController::class, 'statistics'])->name('statistics');
-    
+
     Route::get('/satellites/live-tracking', [SatelliteController::class, 'liveTracking'])->name('satellites.live');
     
     Route::resource('satellites', SatelliteController::class);
+    Route::post('/satellites/{satellite}/sync-tle', [App\Http\Controllers\SatelliteController::class, 'syncSingleTLE'])->name('satellites.sync-tle');
+    
     Route::resource('ground-stations', GroundStationController::class);
 });
 

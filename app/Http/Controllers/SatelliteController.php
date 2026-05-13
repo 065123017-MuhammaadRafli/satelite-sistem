@@ -6,6 +6,7 @@ use App\Models\Satellite;
 use App\Models\GroundStation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
 
 class SatelliteController extends Controller
 {
@@ -135,5 +136,54 @@ class SatelliteController extends Controller
             ->get();
 
         return view('satellites.live', compact('satellites'));
+    }
+
+    // Fungsi Baru: Menarik data TLE terbaru khusus untuk satu satelit
+    public function syncSingleTLE(Satellite $satellite)
+    {
+        // URL Endpoint TLE dari server lokal BRIN
+        $url = 'http://10.35.0.104/tle/LAPANSAT-TLE.txt';
+
+        try {
+            $response = Http::timeout(10)->get($url);
+
+            if ($response->successful()) {
+                $lines = array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', $response->body())));
+                $lines = array_values($lines);
+
+                $isUpdated = false;
+
+                for ($i = 0; $i < count($lines); $i += 3) {
+                    if (isset($lines[$i + 2])) {
+                        $nameFromTxt = trim($lines[$i]);
+                        $tle1 = trim($lines[$i + 1]);
+                        $tle2 = trim($lines[$i + 2]);
+
+                        // Cek apakah nama di txt cocok dengan nama satelit
+                        if (stripos($nameFromTxt, $satellite->name) !== false || stripos($satellite->name, $nameFromTxt) !== false) {
+                            
+                            $satellite->update([
+                                'tle_line1' => $tle1,
+                                'tle_line2' => $tle2,
+                            ]);
+                            
+                            $isUpdated = true;
+                            break; 
+                        }
+                    }
+                }
+
+                if ($isUpdated) {
+                    return redirect()->back()->with('success', "Data TLE untuk {$satellite->name} berhasil diperbarui!");
+                } else {
+                    return redirect()->back()->with('warning', "Nama {$satellite->name} tidak ditemukan di server TLE BRIN.");
+                }
+            }
+
+            return redirect()->back()->with('error', 'Gagal menghubungi server TLE.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Koneksi ke server TLE gagal: ' . $e->getMessage());
+        }
     }
 }
