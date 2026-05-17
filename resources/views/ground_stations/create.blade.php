@@ -1,103 +1,97 @@
 @extends('layouts.admin')
 
-@section('title', 'Create Ground Station')
-@section('page-title', 'Create New Ground Station')
-
-@section('breadcrumb')
-    <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
-    <li class="breadcrumb-item"><a href="{{ route('ground-stations.index') }}">Ground Stations</a></li>
-    <li class="breadcrumb-item active">Create</li>
-@endsection
+@section('title', 'Tambah Stasiun Bumi Baru')
+@section('page-title', 'Tambah Stasiun Bumi')
+@section('page-subtitle', 'Masukkan detail informasi dan titik koordinat stasiun bumi (Ground Station) baru.')
+@section('page-icon', 'fas fa-plus-circle')
 
 @section('content')
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Ground Station Information</h3>
-        </div>
+<div class="row">
+    <div class="col-12 col-xl-10 mx-auto">
 
-        <form action="{{ route('ground-stations.store') }}" method="POST">
-            @csrf
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="name">Station Name <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control @error('name') is-invalid @enderror" 
-                                   id="name" name="name" value="{{ old('name') }}" required>
-                            @error('name')
-                                <span class="invalid-feedback">{{ $message }}</span>
-                            @enderror
-                        </div>
-                    </div>
-
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="country">Country <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control @error('country') is-invalid @enderror" 
-                                   id="country" name="country" value="{{ old('country') }}" required>
-                            @error('country')
-                                <span class="invalid-feedback">{{ $message }}</span>
-                            @enderror
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="location">Location <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control @error('location') is-invalid @enderror" 
-                           id="location" name="location" value="{{ old('location') }}" 
-                           placeholder="e.g., Jakarta, Java Island" required>
-                    @error('location')
-                        <span class="invalid-feedback">{{ $message }}</span>
-                    @enderror
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="latitude">Latitude <span class="text-danger">*</span></label>
-                            <input type="number" step="0.0000001" class="form-control @error('latitude') is-invalid @enderror" 
-                                   id="latitude" name="latitude" value="{{ old('latitude') }}" 
-                                   placeholder="e.g., -6.2088" required>
-                            @error('latitude')
-                                <span class="invalid-feedback">{{ $message }}</span>
-                            @enderror
-                            <small class="form-text text-muted">Range: -90 to 90</small>
-                        </div>
-                    </div>
-
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="longitude">Longitude <span class="text-danger">*</span></label>
-                            <input type="number" step="0.0000001" class="form-control @error('longitude') is-invalid @enderror" 
-                                   id="longitude" name="longitude" value="{{ old('longitude') }}" 
-                                   placeholder="e.g., 106.8456" required>
-                            @error('longitude')
-                                <span class="invalid-feedback">{{ $message }}</span>
-                            @enderror
-                            <small class="form-text text-muted">Range: -180 to 180</small>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="description">Description</label>
-                    <textarea class="form-control @error('description') is-invalid @enderror" 
-                              id="description" name="description" rows="4">{{ old('description') }}</textarea>
-                    @error('description')
-                        <span class="invalid-feedback">{{ $message }}</span>
-                    @enderror
-                </div>
-            </div>
-
-            <div class="card-footer">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i> Save Ground Station
-                </button>
-                <a href="{{ route('ground-stations.index') }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Cancel
+        <div class="row mb-3 align-items-center d-print-none">
+            <div class="col-auto">
+                <a href="{{ route('ground-stations.index') }}" class="btn btn-white fw-bold shadow-sm rounded-3 text-secondary">
+                    <i class="fas fa-arrow-left me-2"></i> Kembali ke Daftar
                 </a>
             </div>
-        </form>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-4 border-bottom">
+                <h3 class="card-title fw-bold text-dark">
+                    <i class="fas fa-broadcast-tower text-primary me-2"></i> Informasi Stasiun Bumi
+                </h3>
+            </div>
+
+            <form action="{{ route('ground-stations.store') }}" method="POST">
+                @csrf
+                <div class="card-body p-4">
+
+                    <div class="row mb-3">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <label class="form-label required fw-medium">Nama Stasiun (Station Name)</label>
+                            <input type="text" name="name" class="form-control" placeholder="Contoh: LAPAN Station Rumpin" value="{{ old('name') }}" required>
+                            @error('name') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label required fw-medium">Negara (Country)</label>
+                            <input type="text" name="country" class="form-control" placeholder="Contoh: Indonesia" value="{{ old('country') }}" required>
+                            @error('country') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label required fw-medium">Detail Lokasi Wilayah</label>
+                        <input type="text" name="location" class="form-control" placeholder="Contoh: Rumpin, Bogor, West Java" value="{{ old('location') }}" required>
+                        @error('location') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                    </div>
+
+                    <div class="hr-text hr-text-left mt-5 mb-4 text-danger">Titik Koordinat Geografis (GPS)</div>
+
+                    <div class="bg-light p-4 rounded-3 border mb-4">
+                        <div class="row">
+                            <div class="col-md-6 mb-3 mb-md-0">
+                                <label class="form-label required fw-medium">Latitude (Garis Lintang)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white"><i class="fas fa-ruler-vertical text-muted"></i></span>
+                                    <input type="number" step="any" name="latitude" class="form-control font-monospace" placeholder="Contoh: -6.5167" value="{{ old('latitude') }}" required>
+                                </div>
+                                <small class="form-hint mt-2">Rentang yang diizinkan: -90 hingga 90</small>
+                                @error('latitude') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label required fw-medium">Longitude (Garis Bujur)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white"><i class="fas fa-ruler-horizontal text-muted"></i></span>
+                                    <input type="number" step="any" name="longitude" class="form-control font-monospace" placeholder="Contoh: 106.5333" value="{{ old('longitude') }}" required>
+                                </div>
+                                <small class="form-hint mt-2">Rentang yang diizinkan: -180 hingga 180</small>
+                                @error('longitude') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label fw-medium">Deskripsi / Spesifikasi Tambahan (Opsional)</label>
+                        <textarea name="description" class="form-control" rows="4" placeholder="Masukkan detail antena, frekuensi, atau catatan lainnya di sini...">{{ old('description') }}</textarea>
+                        @error('description') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                    </div>
+
+                </div>
+
+                <div class="card-footer bg-light text-end py-3 rounded-bottom-3">
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{{ route('ground-stations.index') }}" class="btn btn-white fw-bold">
+                            Batal
+                        </a>
+                        <button type="submit" class="btn btn-primary fw-bold">
+                            <i class="fas fa-save me-2"></i> Simpan Stasiun Bumi
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
     </div>
+</div>
 @endsection

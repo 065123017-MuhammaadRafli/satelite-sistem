@@ -1,403 +1,208 @@
 @extends('layouts.admin')
 
-@section('title', 'Statistics')
-@section('page-title', 'Satellite Statistics')
-
-@section('breadcrumb')
-    <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
-    <li class="breadcrumb-item active">Statistics</li>
-@endsection
+@section('title', 'Statistik Sistem')
+@section('page-title', 'Statistik Satelit & Infrastruktur')
+@section('page-subtitle', 'Analisis visual komposisi satelit dan sebaran stasiun bumi.')
+@section('page-icon', 'fas fa-chart-pie')
 
 @section('content')
-    <!-- Summary Cards -->
-    <div class="row">
-        <div class="col-lg-3 col-6">
-            <div class="small-box bg-info">
-                <div class="inner">
-                    <h3>{{ $total_satellites }}</h3>
-                    <p>Total Satellites</p>
+<div class="row row-cards mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center">
+                    <div class="subheader text-uppercase fw-bold text-muted">Total Satellites</div>
                 </div>
-                <div class="icon">
-                    <i class="fas fa-satellite"></i>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-3 col-6">
-            <div class="small-box bg-success">
-                <div class="inner">
-                    <h3>{{ $active_satellites }}</h3>
-                    <p>Active Satellites</p>
-                </div>
-                <div class="icon">
-                    <i class="fas fa-check-circle"></i>
+                <div class="d-flex align-items-baseline mt-2">
+                    <div class="h1 mb-0 me-2 text-dark fw-bolder">3</div>
+                    <div class="me-auto">
+                        <span class="text-blue d-inline-flex align-items-center lh-1">
+                            <i class="fas fa-satellite fa-sm me-1"></i>
+                        </span>
+                    </div>
                 </div>
             </div>
-        </div>
-
-        <div class="col-lg-3 col-6">
-            <div class="small-box bg-warning">
-                <div class="inner">
-                    <h3>{{ $inactive_satellites }}</h3>
-                    <p>Inactive Satellites</p>
-                </div>
-                <div class="icon">
-                    <i class="fas fa-times-circle"></i>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-3 col-6">
-            <div class="small-box bg-danger">
-                <div class="inner">
-                    <h3>{{ $total_ground_stations }}</h3>
-                    <p>Ground Stations</p>
-                </div>
-                <div class="icon">
-                    <i class="fas fa-broadcast-tower"></i>
-                </div>
+            <div class="progress progress-sm">
+                <div class="progress-bar bg-blue" style="width: 100%" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
             </div>
         </div>
     </div>
 
-    <!-- Charts Row 1 -->
-    <div class="row">
-        <!-- Satellites by Orbit Type -->
-        <div class="col-md-6">
-            <div class="card" style="min-height: 420px;">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-chart-pie mr-1"></i>
-                        Satellites by Orbit Type
-                    </h3>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center">
+                    <div class="subheader text-uppercase fw-bold text-muted">Active Satellites</div>
                 </div>
-                <div class="card-body">
-                    <canvas id="orbitChart" style="min-height: 300px; height: 300px; max-height: 300px;"></canvas>
+                <div class="d-flex align-items-baseline mt-2">
+                    <div class="h1 mb-0 me-2 text-dark fw-bolder">3</div>
+                    <div class="me-auto">
+                        <span class="text-green d-inline-flex align-items-center lh-1">
+                            <i class="fas fa-check-circle fa-sm me-1"></i>
+                        </span>
+                    </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Satellites by Status -->
-        <div class="col-md-6">
-            <div class="card" style="min-height: 420px;">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-chart-pie mr-1"></i>
-                        Satellites by Status
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <canvas id="statusChart" style="min-height: 300px; height: 300px; max-height: 300px;"></canvas>
-                </div>
+            <div class="progress progress-sm">
+                <div class="progress-bar bg-green" style="width: 100%" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
             </div>
         </div>
     </div>
 
-    <!-- Charts Row 2 -->
-    <div class="row">
-        <!-- Satellites by Country -->
-        <div class="col-md-6">
-            <div class="card" style="min-height: 420px;">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-chart-bar mr-1"></i>
-                        Satellites by Country
-                    </h3>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center">
+                    <div class="subheader text-uppercase fw-bold text-muted">Inactive Satellites</div>
                 </div>
-                <div class="card-body">
-                    <canvas id="countryChart" style="min-height: 300px; height: 300px; max-height: 300px;"></canvas>
+                <div class="d-flex align-items-baseline mt-2">
+                    <div class="h1 mb-0 me-2 text-dark fw-bolder">0</div>
+                    <div class="me-auto">
+                        <span class="text-orange d-inline-flex align-items-center lh-1">
+                            <i class="fas fa-times-circle fa-sm me-1"></i>
+                        </span>
+                    </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Ground Stations by Country -->
-        <div class="col-md-6">
-            <div class="card" style="min-height: 420px;">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-chart-bar mr-1"></i>
-                        Ground Stations by Country
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <canvas id="gsCountryChart" style="min-height: 300px; height: 300px; max-height: 300px;"></canvas>
-                </div>
+            <div class="progress progress-sm">
+                <div class="progress-bar bg-orange" style="width: 0%" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
             </div>
         </div>
     </div>
 
-    <!-- Monthly Launches -->
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-chart-line mr-1"></i>
-                        Monthly Launches ({{ date('Y') }})
-                    </h3>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center">
+                    <div class="subheader text-uppercase fw-bold text-muted">Ground Stations</div>
                 </div>
-                <div class="card-body">
-                    <canvas id="monthlyChart" style="min-height: 250px; height: 250px; max-height: 250px;"></canvas>
+                <div class="d-flex align-items-baseline mt-2">
+                    <div class="h1 mb-0 me-2 text-dark fw-bolder">5</div>
+                    <div class="me-auto">
+                        <span class="text-red d-inline-flex align-items-center lh-1">
+                            <i class="fas fa-broadcast-tower fa-sm me-1"></i>
+                        </span>
+                    </div>
                 </div>
+            </div>
+            <div class="progress progress-sm">
+                <div class="progress-bar bg-red" style="width: 100%" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row row-deck row-cards">
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h3 class="card-title fw-bold text-dark">
+                    <i class="fas fa-globe text-primary me-2"></i> Satellites by Orbit Type
+                </h3>
+            </div>
+            <div class="card-body p-4 d-flex align-items-center justify-content-center">
+                <div id="chart-orbit-type" style="width: 100%; min-height: 280px;"></div>
             </div>
         </div>
     </div>
 
-    <!-- Data Tables -->
-    <div class="row">
-        <div class="col-md-6">
-            <div class="card" style="min-height: 300px;">
-                <div class="card-header">
-                    <h3 class="card-title">Satellites by Country (Detailed)</h3>
-                </div>
-                <div class="card-body p-0">
-                    <table class="table table-striped mb-0">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Country</th>
-                                <th>Count</th>
-                                <th>Percentage</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($satellites_by_country as $index => $item)
-                                <tr>
-                                    <td>{{ $index + 1 }}</td>
-                                    <td>{{ $item->country }}</td>
-                                    <td>{{ $item->count }}</td>
-                                    <td>
-                                        <div class="progress progress-xs">
-                                            <div class="progress-bar bg-primary" 
-                                                 style="width: {{ ($item->count / $total_satellites) * 100 }}%">
-                                            </div>
-                                        </div>
-                                        <small>{{ number_format(($item->count / $total_satellites) * 100, 1) }}%</small>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="4" class="text-center text-muted">No data available</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h3 class="card-title fw-bold text-dark">
+                    <i class="fas fa-shield-alt text-success me-2"></i> Satellites by Status
+                </h3>
             </div>
-        </div>
-
-        <div class="col-md-6">
-            <div class="card" style="min-height: 318px;">
-                <div class="card-header">
-                    <h3 class="card-title">Satellites by Orbit Type (Detailed)</h3>
-                </div>
-                <div class="card-body p-0">
-                    <table class="table table-striped mb-0">
-                        <thead>
-                            <tr>
-                                <th>Orbit Type</th>
-                                <th>Count</th>
-                                <th>Percentage</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($satellites_by_orbit as $item)
-                                <tr>
-                                    <td>
-                                        <span class="badge badge-info">{{ $item->orbit_type }}</span>
-                                    </td>
-                                    <td>{{ $item->count }}</td>
-                                    <td>
-                                        <div class="progress progress-xs">
-                                            <div class="progress-bar bg-info" 
-                                                 style="width: {{ ($item->count / $total_satellites) * 100 }}%">
-                                            </div>
-                                        </div>
-                                        <small>{{ number_format(($item->count / $total_satellites) * 100, 1) }}%</small>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="3" class="text-center text-muted">No data available</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
+            <div class="card-body p-4 d-flex align-items-center justify-content-center">
+                <div id="chart-status" style="width: 100%; min-height: 280px;"></div>
             </div>
         </div>
     </div>
+
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h3 class="card-title fw-bold text-dark">
+                    <i class="fas fa-flag text-info me-2"></i> Satellites by Country
+                </h3>
+            </div>
+            <div class="card-body p-4">
+                <div id="chart-sat-country" style="width: 100%; min-height: 280px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h3 class="card-title fw-bold text-dark">
+                    <i class="fas fa-map-marker-alt text-danger me-2"></i> Ground Stations by Country
+                </h3>
+            </div>
+            <div class="card-body p-4">
+                <div id="chart-gs-country" style="width: 100%; min-height: 280px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-<script>
-    // Orbit Type Chart (Pie Chart)
-    const orbitData = {!! json_encode($satellites_by_orbit) !!};
-    const orbitLabels = orbitData.map(item => item.orbit_type);
-    const orbitCounts = orbitData.map(item => item.count);
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
-    new Chart(document.getElementById('orbitChart'), {
-        type: 'pie',
-        data: {
-            labels: orbitLabels,
-            datasets: [{
-                data: orbitCounts,
-                backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545', '#6f42c1']
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom'
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            // --- 1. CHART ORBIT TYPE (Pie Chart) ---
+            var optionsOrbit = {
+                series: [3], // Data dummy awal
+                labels: ['LEO'],
+                chart: { type: 'pie', height: 280, fontFamily: 'Inter, sans-serif' },
+                colors: ['#206bc4', '#4299e1', '#63b3ed'],
+                legend: { position: 'bottom' },
+                stroke: { width: 2, colors: ['#fff'] },
+                dataLabels: { enabled: true, style: { fontWeight: 'bold' } }
+            };
+            new ApexCharts(document.querySelector("#chart-orbit-type"), optionsOrbit).render();
+
+            // --- 2. CHART STATUS (Donut Chart) ---
+            var optionsStatus = {
+                series: [3, 0], // Data dummy awal: [Aktif, Inaktif]
+                labels: ['Active', 'Inactive'],
+                chart: { type: 'donut', height: 280, fontFamily: 'Inter, sans-serif' },
+                colors: ['#2fb344', '#f76707'],
+                legend: { position: 'bottom' },
+                stroke: { width: 2, colors: ['#fff'] },
+                plotOptions: {
+                    pie: { donut: { size: '65%', labels: { show: true, name: { show: true }, value: { show: true } } } }
                 }
-            }
-        }
-    });
+            };
+            new ApexCharts(document.querySelector("#chart-status"), optionsStatus).render();
 
-    // Status Chart (Doughnut Chart)
-    const statusData = {!! json_encode($satellites_by_status) !!};
-    const statusLabels = statusData.map(item => item.status.charAt(0).toUpperCase() + item.status.slice(1));
-    const statusCounts = statusData.map(item => item.count);
+            // --- 3. CHART SATELLITES BY COUNTRY (Vertical Bar Chart) ---
+            var optionsSatCountry = {
+                series: [{ name: 'Satellites', data: [3] }], // Data dummy awal
+                chart: { type: 'bar', height: 280, fontFamily: 'Inter, sans-serif', toolbar: { show: false } },
+                plotOptions: { bar: { borderRadius: 4, columnWidth: '40%' } },
+                colors: ['#206bc4'],
+                xaxis: { categories: ['Indonesia'] },
+                grid: { strokeDashArray: 4, padding: { top: 0, right: 0, bottom: 0, left: 0 } },
+                dataLabels: { enabled: false }
+            };
+            new ApexCharts(document.querySelector("#chart-sat-country"), optionsSatCountry).render();
 
-    new Chart(document.getElementById('statusChart'), {
-        type: 'doughnut',
-        data: {
-            labels: statusLabels,
-            datasets: [{
-                data: statusCounts,
-                backgroundColor: ['#28a745', '#dc3545']
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
-        }
-    });
+            // --- 4. CHART GROUND STATIONS BY COUNTRY (Horizontal Bar Chart) ---
+            var optionsGsCountry = {
+                series: [{ name: 'Ground Stations', data: [3, 1, 1, 1] }], // Data dummy awal
+                chart: { type: 'bar', height: 280, fontFamily: 'Inter, sans-serif', toolbar: { show: false } },
+                plotOptions: { bar: { borderRadius: 4, horizontal: true, barHeight: '50%' } },
+                colors: ['#d63939'],
+                xaxis: { categories: ['Indonesia', 'United States', 'Germany', 'Japan'] },
+                grid: { strokeDashArray: 4 },
+                dataLabels: { enabled: false }
+            };
+            new ApexCharts(document.querySelector("#chart-gs-country"), optionsGsCountry).render();
 
-    // Satellites by Country Chart (Bar Chart)
-    const countryData = {!! json_encode($satellites_by_country) !!};
-    const countryLabels = countryData.map(item => item.country);
-    const countryCounts = countryData.map(item => item.count);
-
-    new Chart(document.getElementById('countryChart'), {
-        type: 'bar',
-        data: {
-            labels: countryLabels,
-            datasets: [{
-                label: 'Satellites',
-                data: countryCounts,
-                backgroundColor: '#007bff',
-                borderColor: '#0056b3',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: { 
-                        stepSize: 1,
-                        precision: 0
-                    }
-                }
-            }
-        }
-    });
-
-    // Ground Stations by Country Chart (Horizontal Bar)
-    const gsCountryData = {!! json_encode($ground_stations_by_country) !!};
-    const gsCountryLabels = gsCountryData.map(item => item.country);
-    const gsCountryCounts = gsCountryData.map(item => item.count);
-
-    new Chart(document.getElementById('gsCountryChart'), {
-        type: 'bar',
-        data: {
-            labels: gsCountryLabels,
-            datasets: [{
-                label: 'Ground Stations',
-                data: gsCountryCounts,
-                backgroundColor: '#dc3545',
-                borderColor: '#a71d2a',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            indexAxis: 'y',
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                x: {
-                    beginAtZero: true,
-                    ticks: { 
-                        stepSize: 1,
-                        precision: 0
-                    }
-                }
-            }
-        }
-    });
-
-    // Monthly Launches Chart (Line Chart)
-    const monthlyData = {!! json_encode($monthly_launches) !!};
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
-    // Create array untuk semua bulan (1-12)
-    let monthlyChartData = new Array(12).fill(0);
-    monthlyData.forEach(item => {
-        monthlyChartData[item.month - 1] = item.count;
-    });
-
-    new Chart(document.getElementById('monthlyChart'), {
-        type: 'line',
-        data: {
-            labels: monthNames,
-            datasets: [{
-                label: 'Launches',
-                data: monthlyChartData,
-                borderColor: '#007bff',
-                backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                tension: 0.4,
-                fill: true
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: { 
-                        stepSize: 1,
-                        precision: 0
-                    }
-                }
-            }
-        }
-    });
-</script>
+        });
+    </script>
 @endpush

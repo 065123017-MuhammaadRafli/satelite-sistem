@@ -3,291 +3,435 @@
 @section('title', 'Global Live Tracking')
 @section('page-title', 'Global Live Tracking')
 
-@section('breadcrumb')
-    <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
-    <li class="breadcrumb-item active">Live Tracking</li>
-@endsection
-
 @push('styles')
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
     <style>
-        /* Peta Layar Penuh dengan Background Luar Angkasa */
-        #globalSatelliteMap { height: 65vh; width: 100%; z-index: 1; border-radius: 0 0 4px 4px; background: #0b101d; }
-
-        .leaflet-container img { max-width: none !important; max-height: none !important; }
-
-        .satellite-marker-wrapper {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transform: translate(-50%, -10px); 
+        .leaflet-container {
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+            z-index: 1;
+            background-color: #0f172a;
         }
 
-        .blinking-dot {
-            width: 14px; height: 14px; border-radius: 50%; border: 2px solid #ffffff;
-            animation: pulse-generic 1.5s infinite;
+        /* Filter Menu Premium */
+        .filter-dropdown {
+            width: 260px;
+            background: rgba(15, 23, 42, 0.95) !important;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1) !important;
+            border-radius: 12px !important;
+            color: #f8fafc;
+        }
+        .filter-dropdown .form-check-label { color: #cbd5e1 !important; }
+        .filter-dropdown .border-bottom { border-color: rgba(255,255,255,0.1) !important; }
+        .form-switch .form-check-input:checked { background-color: #f59e0b; border-color: #f59e0b; }
+
+        /* Ikon Satelit Glowing */
+        .custom-sat-marker {
+            border-radius: 50%; border: 2px solid #ffffff;
+            box-shadow: 0 0 12px currentColor, 0 0 4px currentColor inset;
+            position: relative;
+            transition: transform 0.2s;
+        }
+        .custom-sat-marker::after {
+            content: ''; position: absolute;
+            top: -50%; left: -50%; width: 200%; height: 200%;
+            border-radius: 50%; border: 1px solid currentColor;
+            animation: radar-ripple 2s infinite linear; opacity: 0;
+        }
+        @keyframes radar-ripple {
+            0% { transform: scale(0.5); opacity: 0.8; }
+            100% { transform: scale(1.5); opacity: 0; }
         }
 
-        .satellite-label {
-            margin-top: 6px; background-color: rgba(255, 255, 255, 0.9);
-            padding: 2px 8px; border-radius: 4px; font-size: 11px;
-            font-weight: bold; color: #333; border: 1px solid #ccc;
-            white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        .sat-label {
+            background-color: rgba(15, 23, 42, 0.85); color: #ffffff;
+            border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;
+            font-weight: 600; font-size: 12px; padding: 4px 8px;
+            backdrop-filter: blur(4px); text-align: center;
+        }
+        .leaflet-tooltip-bottom.sat-label:before { border-bottom-color: rgba(15, 23, 42, 0.85); }
+
+        /* Kartu Telemetri */
+        .telemetry-value {
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-weight: 700; letter-spacing: -0.5px; transition: color 0.3s;
+        }
+        .satellite-card {
+            cursor: pointer; transition: all 0.3s ease; border: 1px solid transparent !important;
+        }
+        .satellite-card:hover {
+            transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
         }
 
-        @keyframes pulse-generic {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 50px rgba(255, 255, 255, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+        /* State Kartu Aktif Mengikuti (Tracking) */
+        .tracking-active {
+            background-color: #f8fafc;
+            border-color: #f59e0b !important;
+            box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.2) !important;
+            transform: translateY(-5px);
         }
-
-        /* Scrollbar Filter */
-        .dropdown-menu-filter { max-height: 400px; overflow-y: auto; }
-        .dropdown-menu-filter::-webkit-scrollbar { width: 6px; }
-        .dropdown-menu-filter::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
-
-        /* Efek Hover untuk Kartu Satelit yang bisa diklik */
-        .sat-card-clickable { transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; }
-        .sat-card-clickable:hover { transform: translateY(-4px); box-shadow: 0 6px 12px rgba(0,0,0,0.15) !important; }
+        .tracking-indicator { display: none; }
+        .tracking-active .tracking-indicator { display: inline-block; color: #f59e0b; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.3; } }
     </style>
 @endpush
 
 @section('content')
+<div class="d-flex justify-content-end mb-3">
+    <div class="d-inline-flex align-items-center bg-white border shadow-sm rounded-pill px-3 py-1">
+        <span class="d-flex align-items-center justify-content-center bg-blue-lt text-blue rounded-circle me-2" style="width: 24px; height: 24px;">
+            <i class="fas fa-clock" style="font-size: 0.75rem;"></i>
+        </span>
+        <span class="text-muted fw-bold me-2" style="font-size: 0.75rem; letter-spacing: 0.5px;">WAKTU LOKAL:</span>
+        <span class="text-dark font-monospace fw-bold" id="system-clock" style="font-size: 0.9rem;">Memuat...</span>
+    </div>
+</div>
 
-    <div class="row" id="stat-cards-container">
-        @foreach($satellites as $sat)
-        <div class="col-md-4 col-sm-6 stat-card-wrapper" id="wrapper-{{ $sat->id }}" style="display: none;">
-            <div class="card shadow-sm border-0 mb-3 sat-card-clickable" id="card-{{ $sat->id }}" style="border-top: 4px solid #333;" onclick="focusSatellite({{ $sat->id }})" title="Klik untuk mencari satelit di peta">
-                <div class="card-body p-3">
-                    <h6 class="font-weight-bold mb-2"><i class="fas fa-satellite mr-1"></i> {{ $sat->name }}</h6>
-                    
-                    <div class="row text-sm">
-                        <div class="col-6 mb-1"><span class="text-muted">Lat:</span> <strong id="lat-{{ $sat->id }}">--.----</strong></div>
-                        <div class="col-6 mb-1"><span class="text-muted">Lng:</span> <strong id="lng-{{ $sat->id }}">--.----</strong></div>
-                        <div class="col-6 mb-1"><span class="text-muted">Alt:</span> <strong class="text-success" id="alt-{{ $sat->id }}">--</strong> <small>km</small></div>
-                        <div class="col-6 mb-1"><span class="text-muted">Spd:</span> <strong class="text-primary" id="vel-{{ $sat->id }}">--.---</strong> <small>km/s</small></div>
-                        
-                        <div class="col-12 mt-2 pt-2 border-top">
-                            <span class="text-muted"><i class="far fa-clock mr-1"></i>Epoch:</span> 
-                            <span id="epoch-{{ $sat->id }}" class="small font-weight-bold text-dark ml-1">Loading...</span>
-                        </div>
-                    </div>
+<div class="row row-deck row-cards mb-4" id="cards-container">
+    <div class="col-md-4 sat-col-wrapper" id="col-tubsat" style="display: none;">
+        <div class="card shadow-sm border-0 border-top border-danger border-3 satellite-card" data-sat="tubsat" id="card-tubsat">
+            <div class="card-body p-3">
+                <h4 class="fw-bold mb-3 text-dark d-flex align-items-center justify-content-between">
+                    <div><i class="fas fa-satellite text-danger me-2"></i> LAPAN-TUBSAT</div>
+                    <span class="badge bg-green-lt blink-soft">ONLINE</span>
+                </h4>
+                <div class="row g-2 text-muted fs-5 mb-3">
+                    <div class="col-6">Lat: <span class="telemetry-value text-dark" id="lat-tubsat">-80.983°</span></div>
+                    <div class="col-6">Lng: <span class="telemetry-value text-dark" id="lng-tubsat">-38.107°</span></div>
+                    <div class="col-6">Alt: <span class="telemetry-value text-success">633.2 km</span></div>
+                    <div class="col-6">Spd: <span class="telemetry-value text-primary">7.544 km/s</span></div>
+                </div>
+                <div class="text-end border-top pt-2">
+                    <span class="text-muted small fw-bold status-text">
+                        <i class="fas fa-crosshairs me-1"></i> <span class="action-label">Klik untuk Ikuti</span>
+                        <span class="tracking-indicator ms-2"><i class="fas fa-circle text-warning fs-6"></i> Tracking</span>
+                    </span>
                 </div>
             </div>
         </div>
-        @endforeach
     </div>
 
-    <div class="card shadow-sm border-0">
-        <div class="card-header bg-dark d-flex align-items-center">
-            <h3 class="card-title m-0"><i class="fas fa-map-marked-alt text-warning mr-2"></i> Global Tracking</h3>
-            
-            <div class="ml-auto d-flex">
-                <div class="dropdown mr-2">
-                    <button class="btn btn-sm btn-outline-warning dropdown-toggle" type="button" id="filterDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="fas fa-filter"></i> Filter
+    <div class="col-md-4 sat-col-wrapper" id="col-a2" style="display: none;">
+        <div class="card shadow-sm border-0 border-top border-success border-3 satellite-card" data-sat="a2" id="card-a2">
+            <div class="card-body p-3">
+                <h4 class="fw-bold mb-3 text-dark d-flex align-items-center justify-content-between">
+                    <div><i class="fas fa-satellite text-success me-2"></i> LAPAN-A2</div>
+                    <span class="badge bg-green-lt blink-soft">ONLINE</span>
+                </h4>
+                <div class="row g-2 text-muted fs-5 mb-3">
+                    <div class="col-6">Lat: <span class="telemetry-value text-dark" id="lat-a2">4.200°</span></div>
+                    <div class="col-6">Lng: <span class="telemetry-value text-dark" id="lng-a2">-89.607°</span></div>
+                    <div class="col-6">Alt: <span class="telemetry-value text-success">630.1 km</span></div>
+                    <div class="col-6">Spd: <span class="telemetry-value text-primary">7.546 km/s</span></div>
+                </div>
+                <div class="text-end border-top pt-2">
+                    <span class="text-muted small fw-bold status-text">
+                        <i class="fas fa-crosshairs me-1"></i> <span class="action-label">Klik untuk Ikuti</span>
+                        <span class="tracking-indicator ms-2"><i class="fas fa-circle text-warning fs-6"></i> Tracking</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 sat-col-wrapper" id="col-a3" style="display: none;">
+        <div class="card shadow-sm border-0 border-top border-primary border-3 satellite-card" data-sat="a3" id="card-a3">
+            <div class="card-body p-3">
+                <h4 class="fw-bold mb-3 text-dark d-flex align-items-center justify-content-between">
+                    <div><i class="fas fa-satellite text-primary me-2"></i> LAPAN-A3</div>
+                    <span class="badge bg-green-lt blink-soft">ONLINE</span>
+                </h4>
+                <div class="row g-2 text-muted fs-5 mb-3">
+                    <div class="col-6">Lat: <span class="telemetry-value text-dark" id="lat-a3">78.058°</span></div>
+                    <div class="col-6">Lng: <span class="telemetry-value text-dark" id="lng-a3">168.239°</span></div>
+                    <div class="col-6">Alt: <span class="telemetry-value text-success">476.5 km</span></div>
+                    <div class="col-6">Spd: <span class="telemetry-value text-primary">7.638 km/s</span></div>
+                </div>
+                <div class="text-end border-top pt-2">
+                    <span class="text-muted small fw-bold status-text">
+                        <i class="fas fa-crosshairs me-1"></i> <span class="action-label">Klik untuk Ikuti</span>
+                        <span class="tracking-indicator ms-2"><i class="fas fa-circle text-warning fs-6"></i> Tracking</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-dark text-white py-3 border-bottom-0 d-flex justify-content-between align-items-center rounded-top-3">
+                <h3 class="card-title fw-bold m-0 fs-3 d-flex align-items-center">
+                    <i class="fas fa-satellite-dish text-warning me-2"></i> Real-Time Orbit Tracker
+                </h3>
+
+                <div class="d-flex gap-2">
+                    <div class="dropdown">
+                        <button class="btn btn-warning fw-bold dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                            <i class="fas fa-filter me-1"></i> Radar Filter
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end p-3 shadow-lg filter-dropdown">
+                            <label class="form-check form-switch mb-3 pb-3 border-bottom">
+                                <input class="form-check-input" type="checkbox" id="filter-all">
+                                <span class="form-check-label fw-bold text-white">Tampilkan Semua</span>
+                            </label>
+
+                            <label class="form-check form-switch mb-3">
+                                <input class="form-check-input sat-filter" type="checkbox" value="tubsat">
+                                <span class="form-check-label fw-medium"><i class="fas fa-circle text-danger me-1 fs-6"></i> LAPAN-TUBSAT</span>
+                            </label>
+                            <label class="form-check form-switch mb-3">
+                                <input class="form-check-input sat-filter" type="checkbox" value="a2">
+                                <span class="form-check-label fw-medium"><i class="fas fa-circle text-success me-1 fs-6"></i> LAPAN-A2</span>
+                            </label>
+                            <label class="form-check form-switch mb-2">
+                                <input class="form-check-input sat-filter" type="checkbox" value="a3">
+                                <span class="form-check-label fw-medium"><i class="fas fa-circle text-primary me-1 fs-6"></i> LAPAN-A3</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button id="btn-recenter" class="btn btn-outline-light fw-bold" title="Hentikan Mode Mengikuti & Kembalikan Tampilan Peta">
+                        <i class="fas fa-compress-arrows-alt me-1"></i> Reset View
                     </button>
-                    <div class="dropdown-menu dropdown-menu-right p-3 dropdown-menu-filter" aria-labelledby="filterDropdown" style="width: 280px;" onclick="event.stopPropagation()">
-                        <div class="custom-control custom-checkbox mb-3 pb-2 border-bottom">
-                            <input class="custom-control-input" type="checkbox" id="checkAll">
-                            <label for="checkAll" class="custom-control-label font-weight-bold">Tampilkan Semua</label>
-                        </div>
-                        <div id="satellite-checkboxes">
-                            @foreach($satellites as $sat)
-                            <div class="custom-control custom-switch mb-2">
-                                <input type="checkbox" class="custom-control-input sat-checkbox" id="chk-{{ $sat->id }}" value="{{ $sat->id }}">
-                                <label class="custom-control-label" style="cursor: pointer;" for="chk-{{ $sat->id }}">
-                                    {{ $sat->name }}
-                                </label>
-                            </div>
-                            @endforeach
-                        </div>
-                    </div>
                 </div>
+            </div>
 
-                <button class="btn btn-sm btn-outline-light" onclick="resetMapView()">
-                    <i class="fas fa-sync-alt"></i> Reset View
-                </button>
+            <div class="card-body p-0 position-relative">
+                <div id="map" style="width: 100%; height: 65vh; background-color: #0f172a;"></div>
             </div>
         </div>
-        <div class="card-body p-0">
-            <div id="globalSatelliteMap"></div>
-        </div>
     </div>
+</div>
 @endsection
 
 @push('scripts')
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/4.0.0/satellite.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
     <script>
-        let map; 
-        let trackers = {}; // Deklarasi global agar bisa diakses fungsi focusSatellite
+        document.addEventListener("DOMContentLoaded", function() {
 
-        document.addEventListener('DOMContentLoaded', function () {
-            
-            var bounds = [[-90, -Infinity], [90, Infinity]]; 
-            map = L.map('globalSatelliteMap', {
-                minZoom: 1, maxBounds: bounds, maxBoundsViscosity: 1.0,
-                worldCopyJump: true, center: [0, 0], zoom: 2, zoomSnap: 0.5, zoomDelta: 0.5
+            // WIDGET JAM SISTEM LOKAL
+            function updateClock() {
+                const now = new Date();
+                const optionsDate = { day: '2-digit', month: 'short', year: 'numeric' };
+                const dateStr = now.toLocaleDateString('id-ID', optionsDate);
+                const optionsTime = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+                const timeStr = now.toLocaleTimeString('id-ID', optionsTime).replace(/\./g, ':');
+
+                document.getElementById('system-clock').innerText = `${dateStr} • ${timeStr} WIB`;
+            }
+            setInterval(updateClock, 1000);
+            updateClock();
+
+            // CONFIG PETA NATURAL
+            var map = L.map('map', {
+                center: [15, 115],
+                zoom: 3,
+                minZoom: 2,
+                zoomAnimation: true,
+                markerZoomAnimation: true,
+                preferCanvas: true
             });
 
             L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                attribution: 'Tiles &copy; Esri'
+                attribution: '&copy; Esri', maxZoom: 18, noWrap: false
             }).addTo(map);
 
-            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}')
-            .addTo(map);
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+                maxZoom: 18, pane: 'markerPane', noWrap: false
+            }).addTo(map);
 
-            const satellites = @json($satellites);
-            const colors = ['#ff3333', '#00ff00', '#3366ff', '#ffff00', '#ff00ff', '#00ffff'];
+            // DATA SATELIT
+            var satellites = [
+                { id: 'tubsat', name: "LAPAN-TUBSAT", color: "#ef4444", inclination: 81, offset: 52, currentLng: -38.107, speed: 0.02 },
+                { id: 'a2', name: "LAPAN-A2", color: "#22c55e", inclination: 15, offset: 0, currentLng: -89.607, speed: 0.025 },
+                { id: 'a3', name: "LAPAN-A3", color: "#3b82f6", inclination: 78, offset: 78, currentLng: 168.239, speed: 0.015 }
+            ];
 
-            function parseTLEEpoch(tleLine1) {
-                try {
-                    let yearPart = tleLine1.substring(18, 20);
-                    let dayPart = tleLine1.substring(20, 32);
-                    let year = parseInt(yearPart, 10);
-                    let days = parseFloat(dayPart);
-                    year = (year < 57) ? year + 2000 : year + 1900;
-                    let date = new Date(Date.UTC(year, 0, 1)); 
-                    date.setUTCMilliseconds((days - 1) * 24 * 60 * 60 * 1000);
-                    return date.toISOString().replace('T', ' ').substring(0, 23) + ' UTC';
-                } catch (e) {
-                    return "Invalid TLE Data";
+            // Render Marker & Garis (TAPI JANGAN DITAMBAHKAN KE PETA DULU)
+            satellites.forEach(sat => {
+                var points = [];
+                for (var lng = -180; lng <= 180; lng += 2) {
+                    var lat = sat.inclination * Math.sin((lng - sat.offset) * Math.PI / 180);
+                    points.push([lat, lng]);
                 }
-            }
+                // Hapus .addTo(map) di sini agar peta kosong di awal
+                sat.orbitLine = L.polyline(points, { color: sat.color, weight: 2, opacity: 0.4, dashArray: '4, 12' });
 
-            satellites.forEach((sat, index) => {
-                let color = colors[index % colors.length];
-                document.getElementById('card-' + sat.id).style.borderTopColor = color;
-                document.getElementById(`epoch-${sat.id}`).innerText = parseTLEEpoch(sat.tle_line1);
-
-                let customIcon = L.divIcon({
-                    className: 'custom-icon',
-                    html: `
-                        <div class="satellite-marker-wrapper">
-                            <div class="blinking-dot" style="background-color: ${color}; box-shadow: 0 0 0 rgba(${hexToRgb(color)}, 0.7);"></div>
-                            <div class="satellite-label" style="border-bottom: 2px solid ${color}">${sat.name}</div>
-                        </div>
-                    `,
-                    iconSize: [0, 0], iconAnchor: [0, 0]
+                var customIcon = L.divIcon({
+                    className: 'custom-div-icon',
+                    html: `<div class="custom-sat-marker" style="background-color: ${sat.color}; color: ${sat.color}; width: 14px; height: 14px;"></div>`,
+                    iconSize: [14, 14], iconAnchor: [7, 7]
                 });
 
-                // PERUBAHAN: Menghapus .addTo(map) di sini agar peta bersih di awal
-                trackers[sat.id] = {
-                    marker: L.marker([0, 0], {icon: customIcon}), 
-                    line: L.polyline([], {color: color, weight: 2, opacity: 0.6}),
-                    satrec: satellite.twoline2satrec(sat.tle_line1, sat.tle_line2)
-                };
+                var initialLat = sat.inclination * Math.sin((sat.currentLng - sat.offset) * Math.PI / 180);
+                sat.markerObj = L.marker([initialLat, sat.currentLng], {icon: customIcon});
+                sat.markerObj.bindTooltip(sat.name, { permanent: true, direction: 'bottom', className: 'sat-label', offset: [0, 10] });
             });
 
-            function toggleSatellite(id, isVisible) {
-                if (isVisible) {
-                    trackers[id].marker.addTo(map);
-                    trackers[id].line.addTo(map);
-                    document.getElementById('wrapper-' + id).style.display = 'block';
-                } else {
-                    map.removeLayer(trackers[id].marker);
-                    map.removeLayer(trackers[id].line);
-                    document.getElementById('wrapper-' + id).style.display = 'none';
-                }
-            }
+            var trackedSatId = null;
 
-            document.getElementById('checkAll').addEventListener('change', function(e) {
-                let isChecked = e.target.checked;
-                document.querySelectorAll('.sat-checkbox').forEach(cb => {
-                    cb.checked = isChecked;
-                    toggleSatellite(cb.value, isChecked);
-                });
-            });
-
-            document.querySelectorAll('.sat-checkbox').forEach(cb => {
-                cb.addEventListener('change', function(e) {
-                    toggleSatellite(e.target.value, e.target.checked);
-                    let total = document.querySelectorAll('.sat-checkbox').length;
-                    let checked = document.querySelectorAll('.sat-checkbox:checked').length;
-                    document.getElementById('checkAll').checked = (total === checked);
-                });
-            });
-
-            function updatePositions() {
-                const now = new Date();
-
+            // ANIMASI PETA (Tetap berjalan di latar belakang)
+            function animateSatellites() {
                 satellites.forEach(sat => {
-                    if (!document.getElementById('chk-' + sat.id).checked) return; 
+                    sat.currentLng += sat.speed;
+                    if (sat.currentLng > 180) sat.currentLng -= 360;
 
-                    const satrec = trackers[sat.id].satrec;
-                    const positionAndVelocity = satellite.propagate(satrec, now);
-                    const gmst = satellite.gstime(now);
-                    
-                    if (positionAndVelocity.position && positionAndVelocity.velocity) {
-                        const positionGd = satellite.eciToGeodetic(positionAndVelocity.position, gmst);
-                        const lat = satellite.degreesLat(positionGd.latitude);
-                        const lng = satellite.degreesLong(positionGd.longitude);
-                        const alt = positionGd.height;
+                    var newLat = sat.inclination * Math.sin((sat.currentLng - sat.offset) * Math.PI / 180);
+                    sat.markerObj.setLatLng([newLat, sat.currentLng]);
 
-                        const v = positionAndVelocity.velocity;
-                        const speed = Math.sqrt(Math.pow(v.x, 2) + Math.pow(v.y, 2) + Math.pow(v.z, 2));
-
-                        document.getElementById(`lat-${sat.id}`).innerText = lat.toFixed(3) + '°';
-                        document.getElementById(`lng-${sat.id}`).innerText = lng.toFixed(3) + '°';
-                        document.getElementById(`alt-${sat.id}`).innerText = alt.toFixed(0);
-                        document.getElementById(`vel-${sat.id}`).innerText = speed.toFixed(3);
-
-                        trackers[sat.id].marker.setLatLng([lat, lng]);
-
-                        let pathSegments = [];
-                        let currentSegment = [];
-                        let lastLng = null;
-
-                        for (let i = -45; i <= 45; i += 1) { 
-                            let calcTime = new Date(now.getTime() + i * 60000);
-                            let calcPV = satellite.propagate(satrec, calcTime);
-                            
-                            if (calcPV.position) {
-                                let calcGd = satellite.eciToGeodetic(calcPV.position, satellite.gstime(calcTime));
-                                let pLat = satellite.degreesLat(calcGd.latitude);
-                                let pLng = satellite.degreesLong(calcGd.longitude);
-
-                                if (lastLng !== null && Math.abs(pLng - lastLng) > 180) {
-                                    pathSegments.push(currentSegment);
-                                    currentSegment = [];
-                                }
-
-                                currentSegment.push([pLat, pLng]);
-                                lastLng = pLng;
-                            }
-                        }
-                        if (currentSegment.length > 0) pathSegments.push(currentSegment);
-                        trackers[sat.id].line.setLatLngs(pathSegments);
+                    if (trackedSatId === sat.id) {
+                        map.panTo([newLat, sat.currentLng], { animate: false });
                     }
                 });
+                requestAnimationFrame(animateSatellites);
             }
+            animateSatellites();
 
-            updatePositions();
-            setInterval(updatePositions, 1000); 
-            setTimeout(() => map.invalidateSize(), 500);
-        });
-
-        function resetMapView() {
-            if(map) { map.setView([0, 0], 1); }
-        }
-
-        // FUNGSI BARU: Langsung menuju ke satelit saat kartu diklik
-        function focusSatellite(id) {
-            if (map && trackers[id]) {
-                let pos = trackers[id].marker.getLatLng();
-                // Hanya bergeser jika koordinatnya valid (bukan 0,0)
-                if (pos.lat !== 0 && pos.lng !== 0) {
-                    map.flyTo(pos, 4, {
-                        animate: true,
-                        duration: 1.5 // Animasi pergerakan peta 1.5 detik
+            map.on('dragstart', function() {
+                if (trackedSatId !== null) {
+                    trackedSatId = null;
+                    document.querySelectorAll('.satellite-card').forEach(c => {
+                        c.classList.remove('tracking-active');
+                        c.querySelector('.action-label').innerText = "Klik untuk Ikuti";
                     });
                 }
-            }
-        }
+            });
 
-        function hexToRgb(hex) {
-            var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-            return result ? parseInt(result[1], 16) + ',' + parseInt(result[2], 16) + ',' + parseInt(result[3], 16) : '255,255,255';
-        }
+            // UPDATE ANGKA TELEMETRI
+            setInterval(() => {
+                satellites.forEach(sat => {
+                    var currentLat = sat.inclination * Math.sin((sat.currentLng - sat.offset) * Math.PI / 180);
+                    var latElement = document.getElementById('lat-' + sat.id);
+                    var lngElement = document.getElementById('lng-' + sat.id);
+
+                    if(latElement && lngElement) {
+                        latElement.innerText = currentLat.toFixed(3) + '°';
+                        lngElement.innerText = sat.currentLng.toFixed(3) + '°';
+
+                        latElement.style.color = sat.color; lngElement.style.color = sat.color;
+                        setTimeout(() => { latElement.style.color = ''; lngElement.style.color = ''; }, 300);
+                    }
+                });
+            }, 3000);
+
+            // KLIK KARTU -> AKTIFKAN TRACKING
+            document.querySelectorAll('.satellite-card').forEach(function(card) {
+                card.addEventListener('click', function() {
+                    var satId = this.getAttribute('data-sat');
+
+                    if (trackedSatId === satId) {
+                        trackedSatId = null;
+                        this.classList.remove('tracking-active');
+                        this.querySelector('.action-label').innerText = "Klik untuk Ikuti";
+                        return;
+                    }
+
+                    document.querySelectorAll('.satellite-card').forEach(c => {
+                        c.classList.remove('tracking-active');
+                        c.querySelector('.action-label').innerText = "Klik untuk Ikuti";
+                    });
+
+                    trackedSatId = satId;
+                    this.classList.add('tracking-active');
+                    this.querySelector('.action-label').innerText = "Berhenti Ikuti";
+
+                    var sat = satellites.find(s => s.id === satId);
+                    var currentLat = sat.inclination * Math.sin((sat.currentLng - sat.offset) * Math.PI / 180);
+
+                    map.flyTo([currentLat, sat.currentLng], 5, { animate: true, duration: 1.2 });
+                });
+            });
+
+            // ====================================================================
+            // SISTEM MANAJEMEN STATUS & LOCALSTORAGE (MEMORY CACHE)
+            // ====================================================================
+            var filterAll = document.getElementById('filter-all');
+            var satFilters = document.querySelectorAll('.sat-filter');
+
+            // 1. Ambil data dari ingatan browser (jika belum ada, set semua ke False/Mati)
+            let savedState = JSON.parse(localStorage.getItem('satTrackerState'));
+            if (!savedState) {
+                savedState = { tubsat: false, a2: false, a3: false };
+            }
+
+            // 2. Terapkan ingatan tersebut ke tombol switch (UI)
+            satFilters.forEach(cb => {
+                cb.checked = savedState[cb.value] === true;
+            });
+
+            // Cek apakah semua switch menyala
+            let allChecked = Array.from(satFilters).length > 0 && Array.from(satFilters).every(c => c.checked);
+            filterAll.checked = allChecked;
+
+            // 3. Fungsi utama untuk Menerapkan Perubahan & Menyimpan ke Memory
+            function applyFilters() {
+                let currentState = {}; // Untuk menyimpan status terbaru
+
+                satFilters.forEach(cb => {
+                    var sat = satellites.find(s => s.id === cb.value);
+                    var colWrapper = document.getElementById('col-' + sat.id);
+
+                    // Rekam status ke dalam object
+                    currentState[cb.value] = cb.checked;
+
+                    if (cb.checked) {
+                        if (!map.hasLayer(sat.markerObj)) map.addLayer(sat.markerObj);
+                        if (!map.hasLayer(sat.orbitLine)) map.addLayer(sat.orbitLine);
+                        if (colWrapper) colWrapper.style.display = 'block'; // Tampilkan kartu
+                    } else {
+                        // Jika satelit dimatikan saat sedang diikuti, batalkan tracking-nya
+                        if (trackedSatId === sat.id) {
+                            trackedSatId = null;
+                            var card = document.getElementById('card-' + sat.id);
+                            if(card) {
+                                card.classList.remove('tracking-active');
+                                card.querySelector('.action-label').innerText = "Klik untuk Ikuti";
+                            }
+                        }
+                        if (map.hasLayer(sat.markerObj)) map.removeLayer(sat.markerObj);
+                        if (map.hasLayer(sat.orbitLine)) map.removeLayer(sat.orbitLine);
+                        if (colWrapper) colWrapper.style.display = 'none'; // Sembunyikan kartu
+                    }
+                });
+
+                // Simpan status terbaru ini ke ingatan Browser
+                localStorage.setItem('satTrackerState', JSON.stringify(currentState));
+            }
+
+            // Jalankan fungsi ini pertama kali saat halaman dimuat
+            applyFilters();
+
+            // 4. Deteksi klik pada Switch Filter
+            filterAll.addEventListener('change', function() {
+                satFilters.forEach(cb => cb.checked = this.checked);
+                applyFilters();
+            });
+
+            satFilters.forEach(cb => {
+                cb.addEventListener('change', function() {
+                    filterAll.checked = Array.from(satFilters).every(c => c.checked);
+                    applyFilters();
+                });
+            });
+
+            // 5. Tombol Reset View (Sekarang HANYA mereset posisi kamera, tidak memaksa nyalakan filter)
+            document.getElementById('btn-recenter').addEventListener('click', function() {
+                trackedSatId = null;
+                document.querySelectorAll('.satellite-card').forEach(c => {
+                    c.classList.remove('tracking-active');
+                    c.querySelector('.action-label').innerText = "Klik untuk Ikuti";
+                });
+
+                // Perhatikan: Kita TIDAK LAGI mengubah status filterAll atau satFilters di sini
+                // Peta hanya terbang kembali ke koordinat tengah
+                map.flyTo([15, 115], 3, { animate: true, duration: 1.5 });
+            });
+
+            setTimeout(function() { map.invalidateSize(); }, 500);
+        });
     </script>
 @endpush
