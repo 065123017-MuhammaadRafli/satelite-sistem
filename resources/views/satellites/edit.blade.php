@@ -7,7 +7,16 @@
 
 @section('content')
 <div class="row">
-    <div class="col-12 col-xl-10 mx-auto"> <div class="card shadow-sm border-0">
+    <div class="col-12 col-xl-10 mx-auto">
+
+        <div class="row mb-3 align-items-center d-print-none">
+            <div class="col-auto">
+                <a href="{{ route('satellites.index') }}" class="btn btn-white fw-bold shadow-sm rounded-3 text-secondary">
+                    <i class="fas fa-arrow-left me-2"></i> Kembali ke Daftar
+                </a>
+            </div>
+        </div>
+        <div class="card shadow-sm border-0">
             <div class="card-header bg-white py-4 border-bottom">
                 <h3 class="card-title fw-bold text-dark">
                     <i class="fas fa-edit text-warning me-2"></i> Edit Satelit: <span class="text-primary">{{ $satellite->name }}</span>
@@ -16,7 +25,8 @@
 
             <form action="{{ route('satellites.update', $satellite->id) }}" method="POST" enctype="multipart/form-data">
                 @csrf
-                @method('PUT') <div class="card-body p-4">
+                @method('PUT')
+                <div class="card-body p-4">
 
                     <div class="row mb-3">
                         <div class="col-md-6 mb-3 mb-md-0">
@@ -62,6 +72,13 @@
                             <label class="form-label fw-medium">Stasiun Bumi (Opsional)</label>
                             <select name="ground_station_id" class="form-select">
                                 <option value="">Tidak terikat stasiun bumi</option>
+                                @if(isset($groundStations))
+                                    @foreach($groundStations as $station)
+                                        <option value="{{ $station->id }}" {{ old('ground_station_id', $satellite->ground_station_id) == $station->id ? 'selected' : '' }}>
+                                            {{ $station->name }}
+                                        </option>
+                                    @endforeach
+                                @endif
                                 </select>
                             @error('ground_station_id') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
                         </div>

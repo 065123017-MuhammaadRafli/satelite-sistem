@@ -5,6 +5,51 @@
 @section('page-subtitle', 'Kelola, filter, dan pantau seluruh satelit yang terdaftar di sistem.')
 @section('page-icon', 'fas fa-satellite')
 
+@push('styles')
+    <style>
+        /* Sentuhan Modern Halus (TIDAK MENGUBAH UKURAN FONT) */
+
+        /* 1. Efek kartu yang lebih lembut dan membal */
+        .card {
+            border-radius: 12px;
+            transition: box-shadow 0.3s ease, transform 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 10px 25px rgba(0,0,0,0.06) !important;
+        }
+
+        /* 2. Input pencarian yang sedikit lebih bulat saat difokuskan */
+        .form-control, .form-select {
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.15);
+        }
+
+        /* 3. Animasi pada tombol aksi saat disorot mouse */
+        .btn-icon {
+            border-radius: 8px;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+        .btn-icon:hover {
+            transform: translateY(-2px);
+            background-color: #f8fafc !important;
+        }
+
+        /* 4. Titik indikator status yang berkedip pelan layaknya radar */
+        .status-dot-animated {
+            animation: pulse-soft 2s infinite;
+        }
+        @keyframes pulse-soft {
+            0% { transform: scale(0.95); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.5; }
+            100% { transform: scale(0.95); opacity: 1; }
+        }
+    </style>
+@endpush
+
 @section('content')
 <div class="row mb-3 align-items-center d-print-none">
     <div class="col-auto ms-auto d-print-none">
@@ -107,7 +152,7 @@
                         <td class="align-middle">
                             @if($satellite->status == 'active')
                                 <span class="badge bg-success-lt px-3 py-1 rounded-pill">
-                                    <span class="status-dot bg-success me-1"></span> Aktif
+                                    <span class="status-dot bg-success me-1 status-dot-animated"></span> Aktif
                                 </span>
                             @else
                                 <span class="badge bg-danger-lt px-3 py-1 rounded-pill">
@@ -151,7 +196,7 @@
         </table>
     </div>
 
-    <div class="card-footer bg-white d-flex align-items-center">
+    <div class="card-footer bg-white d-flex align-items-center border-top">
         <p class="m-0 text-muted small">
             Menampilkan <strong>{{ $satellites->firstItem() ?? 0 }}</strong> - <strong>{{ $satellites->lastItem() ?? 0 }}</strong> dari total <strong>{{ $satellites->total() }}</strong> data satelit
         </p>
