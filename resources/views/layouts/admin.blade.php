@@ -13,88 +13,120 @@
 
     <style>
         :root { --tblr-font-sans-serif: 'Inter var', sans-serif; }
-        body { background-color: #f4f7fa; color: #1e293b; }
+        body { background-color: #f8fafc; color: #1e293b; display: flex; flex-direction: column; min-height: 100vh; }
 
         /* =========================================================
-           DESAIN SIDEBAR PREMIUM (MODERN MINIMALIST)
+           1. UKURAN OPTIMAL (KUNCI AGAR LEBARNYA PAS & ELEGAN)
+        ========================================================= */
+        .container-optimum {
+            max-width: 1440px !important;
+            margin: 0 auto;
+            padding-left: 1.5rem !important;
+            padding-right: 1.5rem !important;
+        }
+
+        /* =========================================================
+           2. HEADER GLASSMORPHISM (EFEK KACA TEMBUS PANDANG)
+        ========================================================= */
+        .header-glass {
+            background: rgba(255, 255, 255, 0.85) !important;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            z-index: 1030;
+        }
+
+        /* =========================================================
+           3. SIDEBAR PREMIUM & REKAYASA LOGO (ANTI MEPEK PINGGIR)
         ========================================================= */
         .navbar-vertical {
             background-color: #0f172a !important;
             border-right: 1px solid rgba(255,255,255,0.05);
-            box-shadow: 4px 0 20px rgba(0,0,0,0.1);
+            box-shadow: 4px 0 20px rgba(0,0,0,0.08);
         }
 
-        /* --- BRAND LOGO PREMIUM --- */
+        /* HEADER LOGO: Diberi padding-left ekstra agar masuk ke tengah */
         .navbar-brand-autodark {
-            padding: 1.5rem 1.5rem;
+            padding: 1.75rem 1.5rem 1.75rem 1.75rem !important;
             border-bottom: 1px solid rgba(255,255,255,0.05);
             margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
         }
+
         .brand-container {
-            transition: opacity 0.3s ease;
+            transition: opacity 0.2s ease;
+            display: flex;
+            align-items: center;
         }
-        .brand-container:hover { opacity: 0.85; }
+        .brand-container:hover { opacity: 0.9; }
+
+        /* Wadah Ikon Satelit dengan Efek Pendaran Neon */
         .brand-icon-wrapper {
-            position: relative; display: flex; align-items: center; justify-content: center;
-            width: 38px; height: 38px;
-            background: rgba(59, 130, 246, 0.15); /* Latar kotak biru transparan */
-            border-radius: 10px;
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: rgba(59, 130, 246, 0.12);
+            border-radius: 12px;
+            border: 1px solid rgba(59, 130, 246, 0.35);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.25);
+            flex-shrink: 0; /* Mencegah ikon gepeng */
         }
         .brand-logo-icon {
-            font-size: 1.1rem;
-            background: linear-gradient(135deg, #93c5fd, #3b82f6);
+            font-size: 1.15rem;
+            background: linear-gradient(135deg, #bae6fd, #3b82f6);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
+
+        /* Teks Logo dengan Rongga Sempurna */
         .brand-text-wrapper {
             font-size: 1.35rem;
-            letter-spacing: 1px;
-            display: flex; align-items: center;
+            letter-spacing: 0.75px;
+            display: flex;
+            align-items: center;
+            padding-left: 0.65rem; /* Jarak proporsional antara ikon dan tulisan */
         }
         .brand-text-primary { color: #ffffff; font-weight: 800; }
-        .brand-text-secondary { color: #60a5fa; font-weight: 300; margin-left: 2px; }
+        .brand-text-secondary { color: #60a5fa; font-weight: 400; margin-left: 1px; }
 
-        /* Label Kategori Menu */
+        /* Menu Sidebar */
         .sidebar-heading {
             color: #64748b; font-size: 0.65rem; font-weight: 800;
             letter-spacing: 1.5px; text-transform: uppercase;
-            padding: 1.5rem 1.5rem 0.5rem; margin: 0;
+            padding: 1.5rem 1.5rem 0.5rem 1.75rem; margin: 0;
         }
-
-        /* Item Menu Navigasi Default */
         .nav-link {
             color: #94a3b8 !important; border-radius: 8px;
-            padding: 0.65rem 1rem !important; margin: 0.25rem 1rem;
+            padding: 0.65rem 1rem !important; margin: 0.25rem 1.25rem;
             font-size: 0.9rem; font-weight: 500;
-            transition: all 0.25s ease; display: flex; align-items: center;
+            transition: all 0.2s ease; display: flex; align-items: center;
         }
         .nav-link-icon {
             color: #475569; width: 24px; text-align: center;
-            font-size: 1.1rem; margin-right: 0.75rem; transition: color 0.25s ease;
+            font-size: 1.1rem; margin-right: 0.75rem; transition: color 0.2s ease;
         }
-
-        /* Efek Hover */
         .nav-link:hover {
             background-color: rgba(255, 255, 255, 0.04);
             color: #e2e8f0 !important; transform: translateX(4px);
         }
         .nav-link:hover .nav-link-icon { color: #94a3b8; }
 
-        /* STATE MENU AKTIF */
+        /* Menu Aktif */
         .nav-item.active .nav-link {
             background-color: rgba(59, 130, 246, 0.1) !important;
             color: #60a5fa !important; font-weight: 600; position: relative;
         }
         .nav-item.active .nav-link::before {
-            content: ''; position: absolute; left: -1rem; top: 15%;
+            content: ''; position: absolute; left: -1.25rem; top: 15%;
             height: 70%; width: 4px; background-color: #3b82f6;
             border-radius: 0 4px 4px 0; box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
         }
         .nav-item.active .nav-link-icon { color: #60a5fa !important; }
 
-        /* BADGE "LIVE" PREMIUM */
+        /* Badge LIVE */
         .badge-live {
             background: rgba(239, 68, 68, 0.15); color: #ef4444;
             border: 1px solid rgba(239, 68, 68, 0.3);
@@ -112,7 +144,7 @@
             100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
 
-        /* Header Atas Navigasi */
+        /* Teks Header */
         .page-title-header { font-size: 1.3rem; font-weight: 700; color: #1e293b; margin-bottom: 0; letter-spacing: -0.5px; }
         .page-subtitle-header { font-size: 0.85rem; color: #64748b; margin-top: 2px; }
     </style>
@@ -121,27 +153,25 @@
 <body>
     <div class="page">
         <aside class="navbar navbar-vertical navbar-expand-lg navbar-dark">
-            <div class="container-fluid">
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-menu">
+            <div class="container-fluid p-0"> <button class="navbar-toggler ms-3" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-menu">
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
-                <h1 class="navbar-brand navbar-brand-autodark">
-                    <a href="{{ route('dashboard') }}" class="d-flex align-items-center text-decoration-none brand-container w-100">
-                        <div class="brand-icon-wrapper me-3">
+                <div class="navbar-brand-autodark w-100">
+                    <a href="{{ route('dashboard') ?? '#' }}" class="text-decoration-none brand-container">
+                        <div class="brand-icon-wrapper">
                             <i class="fas fa-satellite-dish brand-logo-icon"></i>
                         </div>
                         <div class="brand-text-wrapper">
                             <span class="brand-text-primary">ASTRA</span><span class="brand-text-secondary">LINK</span>
                         </div>
                     </a>
-                </h1>
+                </div>
 
                 <div class="collapse navbar-collapse" id="sidebar-menu">
-                    <ul class="navbar-nav pt-2">
-
+                    <ul class="navbar-nav pt-2 w-100">
                         <li class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                            <a class="nav-link" href="{{ route('dashboard') }}">
+                            <a class="nav-link" href="{{ route('dashboard') ?? '#' }}">
                                 <span class="nav-link-icon"><i class="fas fa-th-large"></i></span>
                                 <span class="nav-link-title">Dashboard Utama</span>
                             </a>
@@ -157,7 +187,7 @@
                         </li>
 
                         <li class="nav-item {{ request()->routeIs('satellites.live') ? 'active' : '' }}">
-                            <a class="nav-link" href="{{ route('satellites.live') }}">
+                            <a class="nav-link" href="{{ route('satellites.live') ?? '#' }}">
                                 <span class="nav-link-icon"><i class="fas fa-globe-asia"></i></span>
                                 <span class="nav-link-title">Global Tracking</span>
                                 <span class="badge-live"><span class="pulse-dot"></span> LIVE</span>
@@ -165,7 +195,7 @@
                         </li>
 
                         <li class="nav-item {{ request()->routeIs('ground-stations.*') ? 'active' : '' }}">
-                            <a class="nav-link" href="{{ route('ground-stations.index') }}">
+                            <a class="nav-link" href="{{ route('ground-stations.index') ?? '#' }}">
                                 <span class="nav-link-icon"><i class="fas fa-broadcast-tower"></i></span>
                                 <span class="nav-link-title">Infrastruktur Bumi</span>
                             </a>
@@ -174,7 +204,7 @@
                         <div class="sidebar-heading">Data & Analisis</div>
 
                         <li class="nav-item {{ request()->routeIs('statistics') ? 'active' : '' }}">
-                            <a class="nav-link" href="{{ route('statistics') }}">
+                            <a class="nav-link" href="{{ route('statistics') ?? '#' }}">
                                 <span class="nav-link-icon"><i class="fas fa-chart-pie"></i></span>
                                 <span class="nav-link-title">Analitik Sistem</span>
                             </a>
@@ -185,11 +215,12 @@
         </aside>
 
         <div class="page-wrapper">
-            <header class="navbar navbar-expand-md navbar-light sticky-top bg-white border-bottom shadow-sm py-2">
-                <div class="container-fluid px-4">
+
+            <header class="navbar navbar-expand-md navbar-light sticky-top header-glass py-3">
+                <div class="container-fluid container-optimum">
                     <div class="d-flex align-items-center">
-                        <div class="bg-blue-lt text-blue p-2 rounded-3 me-3 d-none d-md-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
-                            <i class="@yield('page-icon', 'fas fa-th-large') fs-3"></i>
+                        <div class="bg-blue-lt text-blue p-2 rounded-3 me-3 d-none d-md-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                            <i class="@yield('page-icon', 'fas fa-th-large') fs-4"></i>
                         </div>
                         <div>
                             <h2 class="page-title-header">@yield('page-title')</h2>
@@ -202,14 +233,14 @@
                             <a href="#" class="nav-link d-flex lh-1 text-reset p-0 align-items-center" data-bs-toggle="dropdown" aria-label="Open user menu">
                                 <div class="d-none d-xl-block ps-3 text-end me-3">
                                     <div class="fw-bold text-dark fs-5">{{ Auth::user()->name ?? 'Administrator' }}</div>
-                                    <div class="mt-1 small text-muted fw-medium text-uppercase tracking-wide">{{ Auth::user()->role ?? 'USER' }}</div>
+                                    <div class="mt-1 small text-muted fw-medium text-uppercase" style="letter-spacing: 1px;">{{ Auth::user()->role ?? 'USER' }}</div>
                                 </div>
-                                <span class="avatar avatar-md bg-blue text-white fw-bold border shadow-sm" style="border-radius: 12px;">
+                                <span class="avatar avatar-md bg-blue text-white fw-bold border shadow-sm" style="border-radius: 12px; font-size: 1rem;">
                                     {{ substr(Auth::user()->name ?? 'A', 0, 1) }}
                                 </span>
                             </a>
-                            <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow shadow-lg border-0 mt-2 p-2" style="border-radius: 12px;">
-                                <a href="{{ route('logout') ?? '#' }}" class="dropdown-item text-danger fw-medium rounded" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                            <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow shadow-lg border-0 mt-3 p-2" style="border-radius: 12px; min-width: 200px;">
+                                <a href="{{ route('logout') ?? '#' }}" class="dropdown-item text-danger fw-medium rounded py-2" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                                     <i class="fas fa-sign-out-alt me-2"></i> Keluar Aplikasi
                                 </a>
                                 <form id="logout-form" action="{{ route('logout') ?? '#' }}" method="POST" class="d-none">@csrf</form>
@@ -219,11 +250,23 @@
                 </div>
             </header>
 
-            <div class="page-body mt-4">
-                <div class="container-fluid px-4">
+            <div class="page-body mt-4 mb-5">
+                <div class="container-fluid container-optimum">
                     @yield('content')
                 </div>
             </div>
+
+            <footer class="footer footer-transparent d-print-none mt-auto border-top py-4">
+                <div class="container-fluid container-optimum text-center text-md-start d-flex flex-column flex-md-row justify-content-between align-items-center">
+                    <div class="text-muted small fw-medium mb-2 mb-md-0">
+                        &copy; {{ date('Y') }} <strong>ASTRALINK System</strong>. All rights reserved.
+                    </div>
+                    <div class="text-muted small">
+                        Version 1.0.0
+                    </div>
+                </div>
+            </footer>
+
         </div>
     </div>
 
