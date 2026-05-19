@@ -197,7 +197,7 @@
                         <li class="nav-item {{ request()->routeIs('ground-stations.*') ? 'active' : '' }}">
                             <a class="nav-link" href="{{ route('ground-stations.index') ?? '#' }}">
                                 <span class="nav-link-icon"><i class="fas fa-broadcast-tower"></i></span>
-                                <span class="nav-link-title">Infrastruktur Bumi</span>
+                                <span class="nav-link-title">Ground Station</span>
                             </a>
                         </li>
 
