@@ -39,25 +39,26 @@
         flex-shrink: 0;
     }
 
-    /* FIX MAP CONTAINER: Mengunci ukuran tinggi agar peta tidak abu-abu polos */
-    .map-wrapper {
-        border-radius: 12px;
-        border: 1px solid #e2e8f0;
-        overflow: hidden;
-        box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
-        background: #0f172a; /* Latar belakang gelap agar transisi peta halus */
-    }
-    #map {
-        width: 100%;
-        height: 480px; /* Dikunci ke ukuran absolut agar Leaflet langsung merender jelas */
-    }
-
     /* GPS Coordinate Highlight */
     .gps-value {
         font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
         color: #3b82f6 !important;
         font-weight: 700;
         letter-spacing: -0.5px;
+    }
+
+    /* Table modern styling */
+    .modern-table th {
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+        color: #64748b;
+        background-color: #f8fafc !important;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+    .modern-table td {
+        vertical-align: middle;
     }
 </style>
 
@@ -168,69 +169,68 @@
 
     <div class="col-12 col-lg-7">
         <div class="card space-bg-card h-100">
-            <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center">
-                    <div class="bg-red-lt p-2 rounded-3 me-3 text-red d-flex align-items-center justify-content-center" style="width:36px; height:36px;">
-                        <i class="fas fa-map-marked-alt fs-4"></i>
-                    </div>
-                    <h3 class="card-title fw-bold text-dark m-0">Visualisasi Lokasi Infrastruktur</h3>
+            <div class="card-header bg-white py-3 border-bottom d-flex align-items-center">
+                <div class="bg-indigo-lt p-2 rounded-3 me-3 text-indigo d-flex align-items-center justify-content-center" style="width:36px; height:36px;">
+                    <i class="fas fa-satellite fs-4"></i>
                 </div>
-                <span class="badge bg-green-lt text-green rounded-pill px-2 py-0.5 fw-bold" style="font-size: 0.7rem;">LIVE VIEW</span>
+                <h3 class="card-title fw-bold text-dark m-0">Armada Satelit yang Dipantau ({{ $groundStation->satellites_count ?? $groundStation->satellites->count() }})</h3>
             </div>
-            <div class="card-body p-3">
-                <div class="map-wrapper">
-                    <div id="map"></div>
-                </div>
+
+            <div class="table-responsive">
+                <table class="table table-vcenter modern-table card-table table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th class="w-1 text-center">#</th>
+                            <th>Nama Satelit</th>
+                            <th>Tipe Orbit</th>
+                            <th>Status</th>
+                            <th class="w-1">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($groundStation->satellites as $index => $satellite)
+                        <tr>
+                            <td class="text-center text-muted">{{ $index + 1 }}</td>
+                            <td class="fw-bold text-dark fs-4">{{ $satellite->name }}</td>
+                            <td>
+                                @if($satellite->orbit_type == 'LEO')
+                                    <span class="badge bg-cyan-lt fw-bold">{{ $satellite->orbit_type }}</span>
+                                @elseif($satellite->orbit_type == 'GEO')
+                                    <span class="badge bg-purple-lt fw-bold">{{ $satellite->orbit_type }}</span>
+                                @else
+                                    <span class="badge bg-blue-lt fw-bold">{{ $satellite->orbit_type }}</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($satellite->status == 'active')
+                                    <span class="badge bg-green-lt fw-bold px-2 py-1"><i class="fas fa-check-circle me-1"></i> Active</span>
+                                @else
+                                    <span class="badge bg-red-lt fw-bold px-2 py-1"><i class="fas fa-times-circle me-1"></i> Inactive</span>
+                                @endif
+                            </td>
+                            <td>
+                                <a href="{{ route('satellites.show', $satellite->id) }}" class="btn btn-sm btn-light border shadow-sm fw-medium">
+                                    <i class="fas fa-eye me-1 text-blue"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-5">
+                                <div class="d-flex flex-column align-items-center justify-content-center py-4">
+                                    <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mb-3" style="width:60px; height:60px;">
+                                        <i class="fas fa-satellite-dish fs-2 text-secondary opacity-50"></i>
+                                    </div>
+                                    <span class="fw-medium">Belum ada satelit yang terhubung ke stasiun ini.</span>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 
 </div>
 @endsection
-
-@push('scripts')
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        var lat = {{ $groundStation->latitude }};
-        var lng = {{ $groundStation->longitude }};
-        var stationName = "{{ $groundStation->name }}";
-
-        // Inisialisasi Peta (Gunakan zoom level 12 agar peta langsung fokus tajam ke lokasi stasiun)
-        var map = L.map('map', {
-            center: [lat, lng],
-            zoom: 12,
-            zoomAnimation: true,
-            preferCanvas: true
-        });
-
-        // Menggunakan tile layer resolusi tinggi yang bersih
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{y}/{x}.png', {
-            attribution: '&copy; OpenStreetMap contributors',
-            maxZoom: 19
-        }).addTo(map);
-
-        // Custom Marker Glowing Biru Sesuai Tema Astra Link
-        var customIcon = L.divIcon({
-            className: 'custom-div-icon',
-            html: `
-                <div style="background-color: #3b82f6; width: 32px; height: 32px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 15px rgba(59, 130, 246, 0.6); display: flex; align-items: center; justify-content: center; color: white;">
-                    <i class="fas fa-broadcast-tower" style="font-size: 13px;"></i>
-                </div>`,
-            iconSize: [32, 32],
-            iconAnchor: [16, 16]
-        });
-
-        // Tampilkan Marker dan Popup teks secara otomatis saat halaman dibuka
-        var marker = L.marker([lat, lng], {icon: customIcon}).addTo(map)
-            .bindPopup("<div style='font-family:sans-serif; padding:2px;'><b style='font-size:13px; color:#1e293b;'>" + stationName + "</b><br><span style='color:#22c55e; font-weight:bold; font-size:11px;'><i class='fas fa-circle me-1' style='font-size:8px;'></i> Ground Station Active</span></div>")
-            .openPopup();
-
-        // FIX TRICK: Paksa Leaflet menghitung ulang ukuran kontainer agar render benua langsung keluar jelas
-        setTimeout(function() {
-            map.invalidateSize();
-        }, 100);
-    });
-</script>
-@endpush
