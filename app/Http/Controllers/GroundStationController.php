@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\GroundStation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 
 class GroundStationController extends Controller
 {
@@ -19,21 +20,44 @@ class GroundStationController extends Controller
     }
 
     public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'location' => 'required|string|max:255',
-            'country' => 'required|string|max:255',
-            'latitude' => 'required|numeric|between:-90,90',
-            'longitude' => 'required|numeric|between:-180,180',
-            'description' => 'nullable|string'
-        ]);
+{
+    $validated = $request->validate([
+        'name' => 'required|string|max:255',
+        'location' => 'required|string|max:255',
+        'country' => 'required|string|max:255',
+        'latitude' => 'required|numeric',
+        'longitude' => 'required|numeric',
+        'description' => 'nullable|string',
+    ]);
 
-        GroundStation::create($validated);
+    // =========================================================================
+    // MESIN OTO-KALKULASI ALTITUDE MENGGUNAKAN SATELIT TOPOGRAFI (OPEN-METEO)
+    // =========================================================================
+    try {
+        $lat = $validated['latitude'];
+        $lng = $validated['longitude'];
 
-        return redirect()->route('ground-stations.index')
-            ->with('success', 'Ground Station created successfully!');
+        // Meminta data elevasi daratan dari API publik secara diam-diam
+        $url = "https://api.open-meteo.com/v1/elevation?latitude={$lat}&longitude={$lng}";
+        $response = Http::timeout(5)->get($url);
+
+        // Jika berhasil mendapat jawaban, simpan angkanya
+        if ($response->successful() && isset($response['elevation'][0])) {
+            $validated['altitude'] = $response['elevation'][0];
+        } else {
+            $validated['altitude'] = 0; // Jika tidak ada daratan (di tengah laut)
+        }
+    } catch (\Exception $e) {
+        $validated['altitude'] = 0; // Fallback jika server API sedang down
     }
+    // =========================================================================
+
+    // Simpan ke database
+    GroundStation::create($validated);
+
+    return redirect()->route('ground-stations.index')
+        ->with('success', 'Stasiun bumi berhasil diregistrasi beserta data ketinggiannya!');
+}
 
     public function show(GroundStation $groundStation)
     {

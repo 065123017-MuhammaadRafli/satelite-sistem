@@ -198,7 +198,7 @@
                         </div>
                     </div>
 
-                    <button id="btn-recenter" class="btn btn-outline-light fw-bold" title="Hentikan Mode Mengikuti & Kembalikan Tampilan Peta">
+                    <button id="btn-recenter" class="btn btn-outline-light fw-bold" title="Hentikan Mode Mengikuti & Kembalikan Tampilan Peta ke Seluruh Satelit">
                         <i class="fas fa-compress-arrows-alt me-1"></i> Reset View
                     </button>
                 </div>
@@ -229,12 +229,12 @@
 
                 document.getElementById('system-clock').innerText = `${dateStr} • ${timeStr} WIB`;
             }
-            setInterval(updateClock, 1000);
+            setInterval(updateClock, 3000);
             updateClock();
 
-            // CONFIG PETA NATURAL
+            // CONFIG PETA NATURAL (ESRI BUMI TERANG)
             var map = L.map('map', {
-                center: [15, 115],
+                center: [0, 115], // Titik tengah awal sebelum animasi
                 zoom: 3,
                 minZoom: 2,
                 zoomAnimation: true,
@@ -304,7 +304,7 @@
                                 txtLat.innerText = newLat.toFixed(3) + '°';
                                 txtLng.innerText = newLng.toFixed(3) + '°';
                             }
-                        } catch(e) { console.log("Error propagate database sat"); }
+                        } catch(e) { /* Error propagate diabaikan untuk log bersih */ }
                     } else {
                         sat.currentLng += sat.speed;
                         if (sat.currentLng > 180) sat.currentLng -= 360;
@@ -401,6 +401,44 @@
                 localStorage.setItem('satTrackerState', JSON.stringify(currentState));
             }
 
+            // =======================================================
+            // FUNGSI INTI: SMART GLOBAL VIEW (Membingkai Semua Satelit)
+            // =======================================================
+            function resetGlobalView() {
+                // Matikan tracking card
+                trackedSatId = null;
+                document.querySelectorAll('.satellite-card').forEach(c => {
+                    c.classList.remove('tracking-active');
+                    c.querySelector('.action-label').innerText = "Klik untuk Ikuti";
+                });
+
+                var bounds = L.latLngBounds();
+                var countVisible = 0;
+
+                // Loop semua satelit dan ambil koordinat TERBARU mereka
+                satellites.forEach(sat => {
+                    if (sat.markerObj && map.hasLayer(sat.markerObj)) {
+                        var pos = sat.markerObj.getLatLng();
+                        // Pastikan posisi tidak [0,0] (belum dihitung)
+                        if (pos.lat !== 0 || pos.lng !== 0) {
+                            bounds.extend(pos);
+                            countVisible++;
+                        }
+                    }
+                });
+
+                if (bounds.isValid() && countVisible > 0) {
+                    // Padding 80px agar marker satelit di pinggir bumi tidak tertutup tepi peta
+                    map.flyToBounds(bounds, { padding: [80, 80], maxZoom: 5, animate: true, duration: 1.5 });
+                } else {
+                    map.flyTo([0, 115], 3, { animate: true, duration: 1.5 });
+                }
+            }
+
+            // Pasangkan fungsi cerdas ini ke tombol Reset View
+            document.getElementById('btn-recenter').addEventListener('click', resetGlobalView);
+
+
             // INJEKSI LOGIKA DINAMIS SATELLITE DATABASE + GENERATE ORBIT LINE TRACK
             fetch("{{ route('api.satellites.live') }}")
                 .then(response => response.json())
@@ -447,15 +485,11 @@
                             </label>`;
                         filterDropdownMenu.insertAdjacentHTML('beforeend', filterHtml);
 
-                        // ==========================================================
-                        // LOGIKA BARU: HITUNG & BUAT GARIS LINTASAN (TRACK LINE) DARI TLE
-                        // ==========================================================
                         var orbitPoints = [];
                         try {
                             const satrec = satellite.twoline2satrec(sat.tle_line1, sat.tle_line2);
                             const baseTime = new Date();
 
-                            // Hitung posisi satelit ke depan setiap 2 menit sepanjang satu putaran penuh orbit (100 menit)
                             for (let i = -50; i <= 50; i += 2) {
                                 const futureTime = new Date(baseTime.getTime() + i * 60000);
                                 const positionAndVelocity = satellite.propagate(satrec, futureTime);
@@ -470,7 +504,6 @@
                             }
                         } catch(err) { console.log("Gagal membuat garis orbit TLE", err); }
 
-                        // Buat Objek Polylinenya (Garis Kuning Putus-Putus Khas Orbit)
                         var orbitLineObj = null;
                         if (orbitPoints.length > 0) {
                             orbitLineObj = L.polyline(orbitPoints, {
@@ -499,13 +532,12 @@
                             tle2: sat.tle_line2,
                             isDatabase: true,
                             markerObj: markerObj,
-                            orbitLine: orbitLineObj // Masukkan objek garis ke array agar dikontrol sistem Filter
+                            orbitLine: orbitLineObj
                         });
 
                         bindCardClickEvent(document.getElementById(`card-${uniqueId}`));
                     });
 
-                    // Sinkronisasi kelas grid
                     document.querySelectorAll('.sat-col-wrapper').forEach(el => {
                         el.classList.remove('col-md-4');
                         el.classList.add('col-sm-6', 'col-md-4', 'col-xl-3');
@@ -529,18 +561,12 @@
                     applyFilters();
                 })
                 .finally(() => {
+                    // Mulai jalankan pergerakan animasi satelit
                     animateSatellites();
-                });
 
-            // RESET VIEW ACTION
-            document.getElementById('btn-recenter').addEventListener('click', function() {
-                trackedSatId = null;
-                document.querySelectorAll('.satellite-card').forEach(c => {
-                    c.classList.remove('tracking-active');
-                    c.querySelector('.action-label').innerText = "Klik untuk Ikuti";
+                    // Beri jeda 0.5 detik agar satelit bergerak ke koordinat aslinya, LALU otomatis panggil Reset View!
+                    setTimeout(resetGlobalView, 500);
                 });
-                map.flyTo([15, 115], 3, { animate: true, duration: 1.5 });
-            });
 
             setTimeout(function() { map.invalidateSize(); }, 500);
         });

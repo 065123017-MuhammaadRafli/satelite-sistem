@@ -41,7 +41,7 @@ class SatelliteController extends Controller
 
         $satellites = $query->latest()->paginate(10);
         $countries = Satellite::distinct()->pluck('country');
-        
+
         return view('satellites.index', compact('satellites', 'countries'));
     }
 
@@ -58,8 +58,8 @@ class SatelliteController extends Controller
             'country' => 'required|string|max:255',
             'launch_date' => 'required|date',
             'orbit_type' => 'required|in:LEO,MEO,GEO',
-            'tle_line1' => 'nullable|string|size:69', 
-            'tle_line2' => 'nullable|string|size:69', 
+            'tle_line1' => 'nullable|string|size:69',
+            'tle_line2' => 'nullable|string|size:69',
             'status' => 'required|in:active,inactive',
             'description' => 'nullable|string',
             'ground_station_id' => 'nullable|exists:ground_stations,id',
@@ -94,8 +94,8 @@ class SatelliteController extends Controller
             'country' => 'required|string|max:255',
             'launch_date' => 'required|date',
             'orbit_type' => 'required|in:LEO,MEO,GEO',
-            'tle_line1' => 'nullable|string|size:69', 
-            'tle_line2' => 'nullable|string|size:69', 
+            'tle_line1' => 'nullable|string|size:69',
+            'tle_line2' => 'nullable|string|size:69',
             'status' => 'required|in:active,inactive',
             'description' => 'nullable|string',
             'ground_station_id' => 'nullable|exists:ground_stations,id',
@@ -126,7 +126,7 @@ class SatelliteController extends Controller
         return redirect()->route('satellites.index')
             ->with('success', 'Satellite deleted successfully!');
     }
-    
+
     public function liveTracking()
     {
         // Mengambil semua satelit aktif yang TLE-nya terisi
@@ -139,51 +139,59 @@ class SatelliteController extends Controller
     }
 
     // Fungsi Baru: Menarik data TLE terbaru khusus untuk satu satelit
+    // Fungsi Menarik Data TLE dengan Smart Fallback (BRIN -> Celestrak)
     public function syncSingleTLE(Satellite $satellite)
     {
-        // URL Endpoint TLE dari server lokal BRIN
-        $url = 'http://10.35.0.104/tle/LAPANSAT-TLE.txt';
+        // 1. PRIORITAS UTAMA: Coba tarik dari server lokal BRIN (Timeout disingkat jadi 3 detik agar tidak hanging lama)
+        $urlBrin = 'http://10.35.0.104/tle/LAPANSAT-TLE.txt';
 
         try {
-            $response = Http::timeout(10)->get($url);
+            $responseBrin = Http::timeout(3)->get($urlBrin);
 
-            if ($response->successful()) {
-                $lines = array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', $response->body())));
+            if ($responseBrin->successful()) {
+                $lines = array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', $responseBrin->body())));
                 $lines = array_values($lines);
-
-                $isUpdated = false;
 
                 for ($i = 0; $i < count($lines); $i += 3) {
                     if (isset($lines[$i + 2])) {
                         $nameFromTxt = trim($lines[$i]);
-                        $tle1 = trim($lines[$i + 1]);
-                        $tle2 = trim($lines[$i + 2]);
-
-                        // Cek apakah nama di txt cocok dengan nama satelit
                         if (stripos($nameFromTxt, $satellite->name) !== false || stripos($satellite->name, $nameFromTxt) !== false) {
-                            
                             $satellite->update([
-                                'tle_line1' => $tle1,
-                                'tle_line2' => $tle2,
+                                'tle_line1' => trim($lines[$i + 1]),
+                                'tle_line2' => trim($lines[$i + 2]),
                             ]);
-                            
-                            $isUpdated = true;
-                            break; 
+                            return redirect()->back()->with('success', "Koneksi Cepat: TLE {$satellite->name} berhasil ditarik dari Server Lokal BRIN.");
                         }
                     }
                 }
+            }
+        } catch (\Exception $e) {
+            // BRIN lambat atau mati? Abaikan error, kita biarkan sistem turun ke Fallback (Langkah 2)
+        }
 
-                if ($isUpdated) {
-                    return redirect()->back()->with('success', "Data TLE untuk {$satellite->name} berhasil diperbarui!");
-                } else {
-                    return redirect()->back()->with('warning', "Nama {$satellite->name} tidak ditemukan di server TLE BRIN.");
+        // 2. FALLBACK PLAN: Jika server BRIN down/lambat, otomatis tembak ke API Publik Celestrak
+        try {
+            // Celestrak merespon sangat cepat karena mencari berdasarkan nama (bukan baca file txt besar)
+            $urlCelestrak = 'https://celestrak.org/NORAD/elements/gp.php?NAME=' . urlencode($satellite->name) . '&FORMAT=tle';
+            $responseCelestrak = Http::timeout(5)->get($urlCelestrak);
+
+            if ($responseCelestrak->successful() && !empty(trim($responseCelestrak->body()))) {
+                $tleData = explode("\n", trim($responseCelestrak->body()));
+
+                if (count($tleData) >= 3) {
+                    $satellite->update([
+                        'tle_line1' => trim($tleData[1]),
+                        'tle_line2' => trim($tleData[2]),
+                    ]);
+                    // Beri tahu user bahwa data diambil dari Celestrak karena server lokal sibuk
+                    return redirect()->back()->with('success', "Server Lokal sibuk. TLE {$satellite->name} otomatis ditarik via Satelit Publik (Celestrak).");
                 }
             }
 
-            return redirect()->back()->with('error', 'Gagal menghubungi server TLE.');
+            return redirect()->back()->with('error', "Gagal: TLE {$satellite->name} tidak ditemukan di BRIN maupun Celestrak.");
 
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Koneksi ke server TLE gagal: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Semua jalur transmisi (Lokal & Internasional) sedang tidak merespon. Coba lagi nanti.');
         }
     }
 }

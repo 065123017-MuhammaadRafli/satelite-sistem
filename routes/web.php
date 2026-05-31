@@ -9,27 +9,31 @@ use App\Models\Satellite;
 
 Route::redirect('/', '/login');
 
-Auth::routes();
+// PERUBAHAN 1: Tambahkan ['verify' => true] agar rute verifikasi email aktif
+Auth::routes(['verify' => true]);
 
+// Mengelompokkan rute yang memerlukan otentikasi
 Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // PERUBAHAN 2: Tambahkan middleware 'verified' untuk melindungi akses
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->middleware(['verified'])
+        ->name('dashboard');
+
     Route::get('/statistics', [DashboardController::class, 'statistics'])->name('statistics');
 
     Route::get('/satellites/live-tracking', [SatelliteController::class, 'liveTracking'])->name('satellites.live');
 
-    // =========================================================================
-    // CODE API FIX: AGAR TIDAK DOBEL DAN HANYA MENAMPILKAN SATELIT BARU (ISS)
-    // =========================================================================
+    // API Fix untuk Satelit Live
     Route::get('/api/live-satellites', function () {
         return response()->json(
             Satellite::where('status', 'active')
-                ->where('name', 'NOT LIKE', '%LAPAN%') // KUNCI: Abaikan jika namanya mengandung kata LAPAN
+                ->where('name', 'NOT LIKE', '%LAPAN%')
                 ->whereNotNull('tle_line1')
                 ->whereNotNull('tle_line2')
                 ->get(['id', 'name', 'tle_line1', 'tle_line2'])
         );
     })->name('api.satellites.live');
-    // =========================================================================
 
     Route::resource('satellites', SatelliteController::class);
     Route::post('/satellites/{satellite}/sync-tle', [App\Http\Controllers\SatelliteController::class, 'syncSingleTLE'])->name('satellites.sync-tle');
