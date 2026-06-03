@@ -9,18 +9,11 @@ class Satellite extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'name',
-        'country',
-        'launch_date',
-        'orbit_type',
-        'tle_line1', // Ubah ini
-        'tle_line2', // Ubah ini
-        'status',
-        'description',
-        'image',
-        'ground_station_id'
-    ];
+  protected $fillable = [
+    'name', 'country', 'launch_date', 'orbit_type',
+    'tle_line1', 'tle_line2', 'status', 'description',
+    'ground_station_id', 'image', 'dynamic_api_url'
+];
 
     protected $casts = [
         'launch_date' => 'date',

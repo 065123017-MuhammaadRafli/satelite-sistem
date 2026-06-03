@@ -63,7 +63,8 @@ class SatelliteController extends Controller
             'status' => 'required|in:active,inactive',
             'description' => 'nullable|string',
             'ground_station_id' => 'nullable|exists:ground_stations,id',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'dynamic_api_url' => 'nullable|url|max:255' // Validasi Baru
         ]);
 
         if ($request->hasFile('image')) {
@@ -99,7 +100,8 @@ class SatelliteController extends Controller
             'status' => 'required|in:active,inactive',
             'description' => 'nullable|string',
             'ground_station_id' => 'nullable|exists:ground_stations,id',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'dynamic_api_url' => 'nullable|url|max:255' // Validasi Baru
         ]);
 
         if ($request->hasFile('image')) {
@@ -138,16 +140,51 @@ class SatelliteController extends Controller
         return view('satellites.live', compact('satellites'));
     }
 
-    // Fungsi Baru: Menarik data TLE terbaru khusus untuk satu satelit
-    // Fungsi Menarik Data TLE dengan Smart Fallback (BRIN -> Celestrak)
+    // FUNGSI SINKRONISASI 3 LAPIS (Dynamic -> BRIN -> Celestrak)
     public function syncSingleTLE(Satellite $satellite)
     {
-        // 1. PRIORITAS UTAMA: Coba tarik dari server lokal BRIN (Timeout disingkat jadi 3 detik agar tidak hanging lama)
-        $urlBrin = 'http://10.35.0.104/tle/LAPANSAT-TLE.txt';
+        // 1. PRIORITAS MUTLAK: Dynamic API URL (Jika user mengisi link spesifik)
+        if (!empty($satellite->dynamic_api_url)) {
+            try {
+                $responseDynamic = Http::timeout(4)->get($satellite->dynamic_api_url);
+                if ($responseDynamic->successful()) {
+                    $lines = array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', $responseDynamic->body())));
+                    $lines = array_values($lines);
 
+                    // Asumsi 1: File Txt List (Pola BRIN)
+                    for ($i = 0; $i < count($lines); $i += 3) {
+                        if (isset($lines[$i + 2])) {
+                            $nameFromTxt = trim($lines[$i]);
+                            if (stripos($nameFromTxt, $satellite->name) !== false || stripos($satellite->name, $nameFromTxt) !== false) {
+                                $satellite->update([
+                                    'tle_line1' => trim($lines[$i + 1]),
+                                    'tle_line2' => trim($lines[$i + 2])
+                                ]);
+                                return redirect()->back()->with('success', "PRIORITAS TINGGI: TLE {$satellite->name} ditarik dari Dynamic URL Spesifik.");
+                            }
+                        }
+                    }
+
+                    // Asumsi 2: File berisi Single TLE (Cuma TLE saja tanpa nama)
+                    if (count($lines) >= 2 && count($lines) <= 3) {
+                         $tle1 = count($lines) == 3 ? $lines[1] : $lines[0];
+                         $tle2 = count($lines) == 3 ? $lines[2] : $lines[1];
+                         $satellite->update([
+                             'tle_line1' => $tle1,
+                             'tle_line2' => $tle2
+                         ]);
+                         return redirect()->back()->with('success', "PRIORITAS TINGGI: TLE {$satellite->name} ditarik dari Dynamic URL Spesifik.");
+                    }
+                }
+            } catch (\Exception $e) {
+                // Jika Dynamic API down, biarkan berlanjut ke Fallback 1
+            }
+        }
+
+        // 2. FALLBACK PLAN 1: Coba tarik dari server lokal BRIN
+        $urlBrin = 'http://10.35.0.104/tle/LAPANSAT-TLE.txt';
         try {
             $responseBrin = Http::timeout(3)->get($urlBrin);
-
             if ($responseBrin->successful()) {
                 $lines = array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', $responseBrin->body())));
                 $lines = array_values($lines);
@@ -166,12 +203,11 @@ class SatelliteController extends Controller
                 }
             }
         } catch (\Exception $e) {
-            // BRIN lambat atau mati? Abaikan error, kita biarkan sistem turun ke Fallback (Langkah 2)
+            // BRIN lambat atau mati? Lanjut ke Fallback 2
         }
 
-        // 2. FALLBACK PLAN: Jika server BRIN down/lambat, otomatis tembak ke API Publik Celestrak
+        // 3. FALLBACK PLAN 2: Otomatis tembak ke API Publik Celestrak
         try {
-            // Celestrak merespon sangat cepat karena mencari berdasarkan nama (bukan baca file txt besar)
             $urlCelestrak = 'https://celestrak.org/NORAD/elements/gp.php?NAME=' . urlencode($satellite->name) . '&FORMAT=tle';
             $responseCelestrak = Http::timeout(5)->get($urlCelestrak);
 
@@ -183,12 +219,11 @@ class SatelliteController extends Controller
                         'tle_line1' => trim($tleData[1]),
                         'tle_line2' => trim($tleData[2]),
                     ]);
-                    // Beri tahu user bahwa data diambil dari Celestrak karena server lokal sibuk
                     return redirect()->back()->with('success', "Server Lokal sibuk. TLE {$satellite->name} otomatis ditarik via Satelit Publik (Celestrak).");
                 }
             }
 
-            return redirect()->back()->with('error', "Gagal: TLE {$satellite->name} tidak ditemukan di BRIN maupun Celestrak.");
+            return redirect()->back()->with('error', "Gagal: TLE {$satellite->name} tidak ditemukan di semua sumber (Dynamic, BRIN, Celestrak).");
 
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Semua jalur transmisi (Lokal & Internasional) sedang tidak merespon. Coba lagi nanti.');

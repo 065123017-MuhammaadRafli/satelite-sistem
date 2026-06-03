@@ -7,6 +7,7 @@ use App\Http\Controllers\GroundStationController;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Satellite;
 
+
 Route::redirect('/', '/login');
 
 // PERUBAHAN 1: Tambahkan ['verify' => true] agar rute verifikasi email aktif
@@ -23,6 +24,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/statistics', [DashboardController::class, 'statistics'])->name('statistics');
 
     Route::get('/satellites/live-tracking', [SatelliteController::class, 'liveTracking'])->name('satellites.live');
+    // Rute untuk Sinkronisasi TLE
+    Route::get('/satellites/{satellite}/sync-tle', [SatelliteController::class, 'syncSingleTLE'])->name('satellites.sync-tle');
 
     // API Fix untuk Satelit Live
     Route::get('/api/live-satellites', function () {

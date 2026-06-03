@@ -217,11 +217,22 @@
                     </div>
                 </div>
 
-                <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
+                @if(session('success'))
+                    <div class="alert alert-success mt-2 mb-3 p-2 fs-6 border-0 shadow-sm rounded-3">
+                        <i class="fas fa-check-circle me-1"></i> {{ session('success') }}
+                    </div>
+                @endif
+                @if(session('error'))
+                    <div class="alert alert-danger mt-2 mb-3 p-2 fs-6 border-0 shadow-sm rounded-3">
+                        <i class="fas fa-exclamation-triangle me-1"></i> {{ session('error') }}
+                    </div>
+                @endif
+
+                <div class="d-flex justify-content-between align-items-center mb-3 mt-2">
                     <h4 class="fw-bold text-dark fs-5 m-0 d-flex align-items-center">
                         <i class="fas fa-code text-muted me-2"></i> Data Orbit TLE
                     </h4>
-                    <a href="#" class="btn btn-outline-success btn-sm fw-bold rounded-2 px-3 d-flex align-items-center transition-all" onclick="alert('Fitur sinkronisasi API sedang dalam pengembangan.'); return false;">
+                    <a href="{{ route('satellites.sync-tle', $satellite->id) }}" class="btn btn-outline-success btn-sm fw-bold rounded-2 px-3 d-flex align-items-center transition-all">
                         <i class="fas fa-sync-alt me-2"></i> Sync TLE
                     </a>
                 </div>

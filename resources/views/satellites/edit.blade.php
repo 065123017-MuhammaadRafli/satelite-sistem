@@ -113,6 +113,28 @@
                             <small class="form-hint mt-2">Biarkan kosong jika tidak ingin mengubah gambar.</small>
                             @error('image') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
                         </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium d-flex align-items-center">
+                                Dynamic API URL
+                                <span class="badge bg-secondary text-white ms-2 fw-normal" style="font-size: 0.65rem;">Opsional</span>
+                            </label>
+                            <div class="input-group shadow-sm rounded-3 overflow-hidden border">
+                                <span class="input-group-text bg-light text-muted border-0 pe-2">
+                                    <i class="fas fa-link"></i>
+                                </span>
+                                <input type="url" name="dynamic_api_url" id="dynamic_api_url"
+                                       class="form-control border-0 px-2 @error('dynamic_api_url') is-invalid @enderror"
+                                       value="{{ old('dynamic_api_url', $satellite->dynamic_api_url) }}"
+                                       placeholder="http://10.35.0.104/tle/LAPANSAT-TLE.txt">
+                            </div>
+                            @error('dynamic_api_url')
+                                <div class="text-danger mt-1 small"><i class="fas fa-exclamation-circle"></i> {{ $message }}</div>
+                            @enderror
+                            <small class="form-hint mt-2">
+                                <i class="fas fa-info-circle me-1 text-primary"></i> Jika diisi, link ini akan diprioritaskan saat proses <b>Sync TLE</b>.
+                            </small>
+                        </div>
                     </div>
 
                     <div class="mb-2">
