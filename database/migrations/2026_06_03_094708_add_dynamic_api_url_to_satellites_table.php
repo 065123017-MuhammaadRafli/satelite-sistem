@@ -9,9 +9,10 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up()
+   public function up()
 {
     Schema::table('satellites', function (Blueprint $table) {
+        // Menambahkan kolom tepat setelah kolom 'description'
         $table->string('dynamic_api_url')->nullable()->after('description');
     });
 }
@@ -22,4 +23,5 @@ public function down()
         $table->dropColumn('dynamic_api_url');
     });
 }
+
 };
