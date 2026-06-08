@@ -1,319 +1,333 @@
 @extends('layouts.admin')
 
 @section('title', 'Dashboard Utama')
-@section('page-title', 'SATELLITE SISTEM Command Center')
+@section('page-title', 'SATELLITE SYSTEM COMAND CENTER')
 @section('page-subtitle', 'Pusat kendali telemetri satelit dan infrastruktur stasiun bumi terintegrasi.')
-@section('page-icon', 'fas fa-network-wired')
+@section('page-icon', 'fas fa-server')
 
 @push('styles')
-    <style>
-        /* --- STATUS & SERVER TIME BAR --- */
-        .status-time-bar {
-            background: #ffffff;
-            border-radius: 14px;
-            border: 1px solid rgba(226, 232, 240, 0.8);
-            box-shadow: 0 4px 20px -5px rgba(15, 23, 42, 0.04);
-        }
+<style>
+    /* Styling Dasar Dasbor Modern Aerospace */
+    .dashboard-container {
+        padding-bottom: 2rem;
+    }
 
-        /* Animasi Lampu Indikator Status */
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            display: inline-block;
-        }
-        .pulsing-green {
-            background-color: #10b981;
-            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-            animation: pulse-green 2s infinite;
-        }
-        @keyframes pulse-green {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-        }
+    /* TELEMETRY CONSOLE BAR (Panel Atas Gelap - Tidak Diubah) */
+    .telemetry-console {
+        background: #0f172a;
+        border-radius: 8px;
+        padding: 14px 24px;
+        margin-bottom: 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.15);
+        border: 1px solid #1e293b;
+        color: #f8fafc;
+    }
+    .status-indicator-dark {
+        display: inline-flex; align-items: center; gap: 8px;
+        background: rgba(34, 197, 94, 0.15); color: #4ade80;
+        padding: 4px 14px; border-radius: 4px;
+        font-family: 'JetBrains Mono', 'Courier New', monospace;
+        font-weight: 700; font-size: 0.75rem; letter-spacing: 1px;
+        border: 1px solid rgba(74, 222, 128, 0.3);
+    }
+    .status-dot-glow {
+        width: 8px; height: 8px; border-radius: 50%; background: #4ade80;
+        box-shadow: 0 0 10px #4ade80;
+        animation: pulse-glow 2s infinite;
+    }
+    @keyframes pulse-glow { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1); } }
 
-        /* --- KARTU METRIK MODERN --- */
-        .stat-card {
-            background: #ffffff;
-            border: none;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px -5px rgba(15, 23, 42, 0.05);
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
-        }
-        .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 30px -10px rgba(15, 23, 42, 0.1);
-        }
-        .icon-box {
-            width: 50px; height: 50px;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 14px;
-            font-size: 1.4rem;
-            transition: transform 0.3s ease;
-        }
-        .stat-card:hover .icon-box {
-            transform: scale(1.05);
-        }
+    .live-clock-display {
+        font-family: 'JetBrains Mono', 'Courier New', monospace;
+        font-size: 0.85rem; letter-spacing: 0.5px;
+        color: #e2e8f0; background: #1e293b;
+        padding: 6px 14px; border-radius: 4px;
+        border: 1px solid #334155;
+    }
 
-        /* --- GRID UTAMA & KARTU KONTEN --- */
-        .dashboard-card {
-            background: #ffffff;
-            border-radius: 20px;
-            border: none;
-            box-shadow: 0 10px 40px -10px rgba(15, 23, 42, 0.05);
-            overflow: hidden;
-        }
+    /* =========================================================
+       WHITE HUD CARDS dengan GLOWING ICONS (Desain Baru)
+       ========================================================= */
+    .hud-white-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0; /* Border tipis seperti referensi awal */
+        border-radius: 12px;
+        padding: 24px;
+        position: relative;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+    }
+    .hud-white-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        border-color: #cbd5e1;
+    }
 
-        /* --- TABEL MODERN SELANG-SELING --- */
-        .modern-table th {
-            background-color: #f8fafc !important;
-            text-transform: uppercase;
-            font-size: 0.7rem;
-            font-weight: 700;
-            letter-spacing: 1px;
-            color: #64748b;
-            border-bottom: 2px solid #e2e8f0 !important;
-            padding: 1rem 1.5rem;
-        }
-        .modern-table td {
-            vertical-align: middle;
-            border-bottom: 1px solid #f1f5f9;
-            padding: 1.2rem 1.5rem;
-            color: #334155;
-        }
-        .modern-table tbody tr {
-            transition: all 0.2s ease;
-        }
-        /* Efek Selang-Seling (Zebra) */
-        .modern-table tbody tr:nth-child(even) {
-            background-color: #f8fafc !important;
-        }
-        .modern-table tbody tr:hover {
-            background-color: #f1f5f9 !important;
-            transform: scale(1.001);
-        }
+    /* TYPOGRAPHY KARTU */
+    .hud-title {
+        font-size: 0.65rem;
+        font-weight: 800;
+        color: #64748b;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+    .hud-value {
+        font-size: 2.5rem;
+        font-weight: 900;
+        color: #0f172a;
+        line-height: 1;
+        margin-bottom: 12px;
+        font-family: 'Inter', sans-serif;
+        letter-spacing: -1px;
+    }
 
-        /* --- LIVE MONITORING STATION PANEL --- */
-        .station-mini-card {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 1rem;
-            transition: all 0.2s ease;
-        }
-        .station-mini-card:hover {
-            border-color: #cbd5e1;
-            background: #ffffff;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-        }
-    </style>
+    /* =========================================================
+       TEKNIK CSS IKON NYALA (NEON/GLOW EFFECT)
+       ========================================================= */
+    .glowing-icon-container {
+        position: absolute;
+        right: 24px;
+        top: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        background: #f8fafc; /* Latar belakang ikon agar tidak terlalu sepi */
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+    }
+    .glowing-icon {
+        font-size: 1.4rem;
+    }
+
+    /* Warna Ikon Nyala (Text-Shadow untuk efek Pijar) */
+    .glow-blue {
+        color: #1d4ed8; /* Warna teks ikon lebih solid */
+        text-shadow: 0 0 12px rgba(59, 130, 246, 0.9), 0 0 20px rgba(59, 130, 246, 0.4);
+    }
+    .glow-green {
+        color: #16a34a;
+        text-shadow: 0 0 12px rgba(34, 197, 94, 0.9), 0 0 20px rgba(34, 197, 94, 0.4);
+    }
+    .glow-orange {
+        color: #ea580c;
+        text-shadow: 0 0 12px rgba(249, 115, 22, 0.9), 0 0 20px rgba(249, 115, 22, 0.4);
+    }
+    .glow-red {
+        color: #dc2626;
+        text-shadow: 0 0 12px rgba(239, 68, 68, 0.9), 0 0 20px rgba(239, 68, 68, 0.4);
+    }
+
+    /* CONTENT DATA GRID (Tidak Diubah) */
+    .tech-panel {
+        background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.02); overflow: hidden;
+    }
+    .tech-panel-header {
+        background: #f8fafc; border-bottom: 1px solid #e2e8f0;
+        padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .tech-panel-title {
+        font-size: 0.9rem; font-weight: 800; color: #1e293b; letter-spacing: 0.5px; margin: 0; display: flex; align-items: center; gap: 8px;
+    }
+    .data-stream-item {
+        padding: 16px 20px; border-bottom: 1px dashed #e2e8f0;
+        display: flex; align-items: center; justify-content: space-between;
+        transition: background 0.2s;
+    }
+    .data-stream-item:hover { background: #fcfcfd; }
+    .data-stream-item:last-child { border-bottom: none; }
+    .signal-bars { display: flex; gap: 2px; align-items: flex-end; height: 14px; }
+    .signal-bar { width: 4px; background-color: #e2e8f0; border-radius: 1px; }
+    .signal-active { background-color: #22c55e; }
+    .cmd-btn {
+        background: #ffffff; border: 1px solid #cbd5e1; color: #475569;
+        font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+        padding: 6px 12px; border-radius: 4px; transition: all 0.2s; text-decoration: none;
+    }
+    .cmd-btn:hover { background: #f1f5f9; color: #0f172a; border-color: #94a3b8; }
+</style>
 @endpush
 
 @section('content')
+<div class="dashboard-container">
 
-<div class="row mb-4 mt-2">
-    <div class="col-12">
-        <div class="status-time-bar p-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
-            <div class="d-flex align-items-center">
-                <span class="text-uppercase fw-bold me-2" style="font-size: 0.7rem; letter-spacing: 0.5px; color: #64748b;">System Status:</span>
-                <span class="badge bg-green-lt d-flex align-items-center fw-bold px-2 py-1 rounded-2 text-green" style="font-size: 0.75rem;">
-                    <span class="status-dot pulsing-green me-1.5"></span> Operational Optimal
-                </span>
+    <div class="telemetry-console">
+        <div class="d-flex align-items-center gap-4">
+            <div>
+                <div class="text-uppercase" style="font-size: 0.6rem; color: #94a3b8; letter-spacing: 1px; margin-bottom: 4px;">System Link Status</div>
+                <div class="status-indicator-dark">
+                    <div class="status-dot-glow"></div> OPERATIONAL OPTIMAL
+                </div>
             </div>
-            <div class="d-flex align-items-center">
-                <i class="far fa-clock me-2" style="color: #64748b; font-size: 0.85rem;"></i>
-                <span class="text-uppercase fw-bold me-2" style="font-size: 0.7rem; letter-spacing: 0.5px; color: #64748b;">Server Time (WIB):</span>
-                <span class="fw-bold text-dark" style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;">
-                    {{ \Carbon\Carbon::now()->timezone('Asia/Jakarta')->format('d M Y, H:i') }}
-                </span>
+        </div>
+        <div class="d-none d-md-block text-end">
+            <div class="text-uppercase" style="font-size: 0.6rem; color: #94a3b8; letter-spacing: 1px; margin-bottom: 4px;">Global Sync Time (WIB)</div>
+            <div class="live-clock-display">
+                <i class="far fa-clock text-blue me-2"></i><span id="live-clock">{{ date('d M Y, H:i:s') }}</span>
             </div>
         </div>
     </div>
-</div>
 
-<div class="row row-cards mb-4">
-    <div class="col-sm-6 col-xl-3">
-        <div class="stat-card h-100 p-4">
-            <div class="d-flex align-items-center mb-4">
-                <div class="icon-box bg-blue-lt text-blue me-3">
-                    <i class="fas fa-satellite"></i>
-                </div>
+    <div class="row g-4 mb-4">
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="hud-white-card position-relative h-100 d-flex flex-column justify-content-between">
                 <div>
-                    <div class="text-slate-400 fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.8px;">Total Satellites</div>
-                    <div class="fs-1 fw-bolder text-dark lh-1 mt-1">15</div>
+                    <div class="glowing-icon-container shadow-sm">
+                        <i class="fas fa-rocket glowing-icon glow-blue"></i>
+                    </div>
+                    <div class="hud-title">ORBITAL ASSETS</div>
+                    <div class="hud-value">{{ \App\Models\Satellite::count() }}</div>
                 </div>
-            </div>
-            <div class="d-flex justify-content-between align-items-center mt-auto border-top pt-3" style="border-color: #f1f5f9 !important;">
-                <span class="text-success small fw-bold"><i class="fas fa-arrow-up me-1"></i>2 Baru</span>
-                <a href="{{ route('satellites.index') }}" class="text-primary small fw-bold text-decoration-none">View Details <i class="fas fa-chevron-right ms-1" style="font-size: 0.6rem;"></i></a>
+                <div class="d-flex justify-content-between align-items-center border-top pt-3 mt-1" style="border-color: #f1f5f9 !important;">
+                    <span class="text-success fw-bold font-monospace" style="font-size: 0.7rem;"><i class="fas fa-caret-up me-1"></i>{{ \App\Models\Satellite::where('status', 'active')->count() }} DEPLOYED</span>
+                    <a href="{{ route('satellites.index') }}" class="text-muted fw-bold text-decoration-none stretched-link" style="font-size: 0.7rem;">ACCESS <i class="fas fa-angle-right ms-1"></i></a>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="col-sm-6 col-xl-3">
-        <div class="stat-card h-100 p-4">
-            <div class="d-flex align-items-center mb-4">
-                <div class="icon-box bg-green-lt text-green me-3">
-                    <i class="fas fa-broadcast-tower"></i>
-                </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="hud-white-card position-relative h-100 d-flex flex-column justify-content-between">
                 <div>
-                    <div class="text-slate-400 fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.8px;">Ground Stations</div>
-                    <div class="fs-1 fw-bolder text-dark lh-1 mt-1">4</div>
+                    <div class="glowing-icon-container shadow-sm">
+                        <i class="fas fa-broadcast-tower glowing-icon glow-green"></i>
+                    </div>
+                    <div class="hud-title">GROUND NODES</div>
+                    <div class="hud-value">{{ \App\Models\GroundStation::count() }}</div>
                 </div>
-            </div>
-            <div class="d-flex justify-content-between align-items-center mt-auto border-top pt-3" style="border-color: #f1f5f9 !important;">
-                <span class="text-success small fw-bold"><i class="fas fa-check-circle me-1"></i>All Active</span>
-                <a href="{{ route('ground-stations.index') }}" class="text-primary small fw-bold text-decoration-none">View Details <i class="fas fa-chevron-right ms-1" style="font-size: 0.6rem;"></i></a>
+                <div class="d-flex justify-content-between align-items-center border-top pt-3 mt-1" style="border-color: #f1f5f9 !important;">
+                    <span class="text-success fw-bold font-monospace" style="font-size: 0.7rem;"><i class="fas fa-check me-1"></i>ALL ONLINE</span>
+                    <a href="{{ route('ground-stations.index') }}" class="text-muted fw-bold text-decoration-none stretched-link" style="font-size: 0.7rem;">MAP <i class="fas fa-angle-right ms-1"></i></a>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="col-sm-6 col-xl-3">
-        <div class="stat-card h-100 p-4">
-            <div class="d-flex align-items-center mb-4">
-                <div class="icon-box bg-orange-lt text-orange me-3">
-                    <i class="fas fa-globe-asia"></i>
-                </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="hud-white-card position-relative h-100 d-flex flex-column justify-content-between">
                 <div>
-                    <div class="text-slate-400 fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.8px;">Coverage Countries</div>
-                    <div class="fs-1 fw-bolder text-dark lh-1 mt-1">12</div>
+                    <div class="glowing-icon-container shadow-sm">
+                        <i class="fas fa-globe-americas glowing-icon glow-orange"></i>
+                    </div>
+                    <div class="hud-title">COVERAGE REGIONS</div>
+                    <div class="hud-value">{{ \App\Models\Satellite::whereNotNull('country')->distinct('country')->count('country') }}</div>
                 </div>
-            </div>
-            <div class="d-flex justify-content-between align-items-center mt-auto border-top pt-3" style="border-color: #f1f5f9 !important;">
-                <span class="text-secondary small fw-bold"><i class="fas fa-map me-1"></i>Global Reach</span>
-                <a href="#" class="text-primary small fw-bold text-decoration-none">More Info <i class="fas fa-chevron-right ms-1" style="font-size: 0.6rem;"></i></a>
+                <div class="d-flex justify-content-between align-items-center border-top pt-3 mt-1" style="border-color: #f1f5f9 !important;">
+                    <span class="text-muted fw-bold font-monospace" style="font-size: 0.7rem;"><i class="fas fa-signal me-1"></i>LINK STABLE</span>
+                    <a href="{{ route('satellites.live') }}" class="text-muted fw-bold text-decoration-none stretched-link" style="font-size: 0.7rem;">MAP <i class="fas fa-angle-right ms-1"></i></a>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="col-sm-6 col-xl-3">
-        <div class="stat-card h-100 p-4">
-            <div class="d-flex align-items-center mb-4">
-                <div class="icon-box bg-red-lt text-danger me-3">
-                    <i class="fas fa-shield-alt"></i>
-                </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="hud-white-card position-relative h-100 d-flex flex-column justify-content-between">
                 <div>
-                    <div class="text-slate-400 fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.8px;">System Status</div>
-                    <div class="fs-2 fw-bolder text-dark lh-1 mt-1 text-uppercase">Secure</div>
+                    <div class="glowing-icon-container shadow-sm">
+                        <i class="fas fa-shield-alt glowing-icon glow-red"></i>
+                    </div>
+                    <div class="hud-title">SECURITY PROTOCOL</div>
+                    <div class="hud-value" style="font-size: 1.8rem; padding: 5px 0;">SECURE</div>
                 </div>
-            </div>
-            <div class="d-flex justify-content-between align-items-center mt-auto border-top pt-3" style="border-color: #f1f5f9 !important;">
-                <span class="text-success small fw-bold"><i class="fas fa-lock me-1"></i>Encrypted</span>
-                <a href="#" class="text-primary small fw-bold text-decoration-none">Check Logs <i class="fas fa-chevron-right ms-1" style="font-size: 0.6rem;"></i></a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row g-4">
-    <div class="col-12 col-lg-7">
-        <div class="card dashboard-card h-100">
-            <div class="card-header bg-white py-4 border-bottom d-flex align-items-center">
-                <div class="bg-indigo-lt p-2 rounded-3 me-3 text-indigo d-flex align-items-center justify-content-center" style="width:36px; height:36px;">
-                    <i class="fas fa-history fs-5"></i>
+                <div class="d-flex justify-content-between align-items-center border-top pt-3 mt-1" style="border-color: #f1f5f9 !important;">
+                    <span class="text-danger fw-bold font-monospace" style="font-size: 0.7rem;"><i class="fas fa-lock me-1"></i>ENCRYPTED</span>
+                    <a href="{{ route('statistics') }}" class="text-muted fw-bold text-decoration-none stretched-link" style="font-size: 0.7rem;">LOGS <i class="fas fa-angle-right ms-1"></i></a>
                 </div>
-                <h3 class="card-title fw-bolder text-dark m-0 fs-3" style="letter-spacing: -0.5px;">Latest Satellite Activities</h3>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table modern-table mb-0">
-                        <thead>
-                            <tr>
-                                <th class="ps-4">Nama Satelit</th>
-                                <th>Negara</th>
-                                <th>Status</th>
-                                <th class="pe-4 text-center">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="ps-4">
-                                    <div class="fw-bolder text-dark fs-4">Satelit Merah Putih</div>
-                                </td>
-                                <td><div class="text-secondary fw-medium">Indonesia</div></td>
-                                <td><span class="badge bg-green-lt px-2 py-1 rounded-2 fw-bold" style="font-size: 0.75rem;"><i class="fas fa-check-circle me-1"></i> ACTIVE</span></td>
-                                <td class="pe-4 text-center">
-                                    <a href="#" class="btn btn-sm btn-white border shadow-sm rounded-pill px-3 fw-bold text-primary">View</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="ps-4">
-                                    <div class="fw-bolder text-dark fs-4">LAPAN-A2</div>
-                                </td>
-                                <td><div class="text-secondary fw-medium">Indonesia</div></td>
-                                <td><span class="badge bg-green-lt px-2 py-1 rounded-2 fw-bold" style="font-size: 0.75rem;"><i class="fas fa-check-circle me-1"></i> ACTIVE</span></td>
-                                <td class="pe-4 text-center">
-                                    <a href="#" class="btn btn-sm btn-white border shadow-sm rounded-pill px-3 fw-bold text-primary">View</a>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="card-footer bg-white py-3 text-center border-top">
-                <a href="{{ route('satellites.index') }}" class="text-primary fw-bold text-decoration-none fs-5">
-                    Lihat Semua Data Satelit <i class="fas fa-arrow-right ms-1 fs-6"></i>
-                </a>
             </div>
         </div>
     </div>
 
-    <div class="col-12 col-lg-5">
-        <div class="card dashboard-card h-100">
-            <div class="card-header bg-white py-4 border-bottom d-flex align-items-center">
-                <div class="bg-purple-lt p-2 rounded-3 me-3 text-purple d-flex align-items-center justify-content-center" style="width:36px; height:36px;">
-                    <i class="fas fa-broadcast-tower fs-5"></i>
+    <div class="row g-4">
+
+        <div class="col-lg-7">
+            <div class="tech-panel h-100">
+                <div class="tech-panel-header">
+                    <h3 class="tech-panel-title">
+                        <i class="fas fa-stream text-blue"></i> Live Telemetry Stream
+                    </h3>
+                    <span class="badge bg-blue-lt text-blue font-monospace" style="font-size: 0.65rem;">AUTO-REFRESH</span>
                 </div>
-                <h3 class="card-title fw-bolder text-dark m-0 fs-3" style="letter-spacing: -0.5px;">Infrastruktur Bumi</h3>
-            </div>
-            <div class="card-body p-4">
-                <div class="row g-3">
-                    <div class="col-12">
-                        <div class="station-mini-card d-flex align-items-center justify-content-between">
-                            <div class="d-flex align-items-center">
-                                <i class="fas fa-server text-indigo me-3 fs-3"></i>
-                                <div>
-                                    <div class="fw-bold text-dark">Stasiun Pusat Rumpin</div>
-                                    <div class="text-muted small">ID: GS-01 • Utama</div>
+
+                <div class="d-flex flex-column">
+                    @forelse(\App\Models\Satellite::latest()->take(3)->get() as $sat)
+                    <div class="data-stream-item">
+                        <div>
+                            <div class="fw-bolder text-dark" style="font-size: 0.95rem;">{{ $sat->name }}</div>
+                            <div class="text-muted font-monospace mt-1" style="font-size: 0.7rem; text-transform: uppercase;">
+                                {{ $sat->orbit_type ?? 'LEO' }} • REGION: {{ $sat->country ?? 'GLOBAL' }}
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-4">
+                            <div class="text-end d-none d-sm-block">
+                                <div class="text-success fw-bold mb-1" style="font-size: 0.65rem; letter-spacing: 1px;">STATUS TX/RX</div>
+                                <div class="signal-bars justify-content-end">
+                                    <div class="signal-bar signal-active"></div>
+                                    <div class="signal-bar signal-active"></div>
+                                    <div class="signal-bar signal-active"></div>
+                                    <div class="signal-bar {{ $sat->status == 'active' ? 'signal-active' : '' }}"></div>
                                 </div>
                             </div>
-                            <span class="badge bg-green-lt text-green fw-bold rounded-pill px-2.5 py-1">ONLINE</span>
+                            <a href="{{ route('satellites.show', $sat->id) }}" class="cmd-btn">TRACK</a>
                         </div>
                     </div>
-                    <div class="col-12">
-                        <div class="station-mini-card d-flex align-items-center justify-content-between">
-                            <div class="d-flex align-items-center">
-                                <i class="fas fa-server text-indigo me-3 fs-3"></i>
-                                <div>
-                                    <div class="fw-bold text-dark">Stasiun Biak</div>
-                                    <div class="text-muted small">ID: GS-02 • Regional</div>
-                                </div>
-                            </div>
-                            <span class="badge bg-green-lt text-green fw-bold rounded-pill px-2.5 py-1">ONLINE</span>
-                        </div>
-                    </div>
-                    <div class="col-12">
-                        <div class="station-mini-card d-flex align-items-center justify-content-between">
-                            <div class="d-flex align-items-center">
-                                <i class="fas fa-server text-indigo me-3 fs-3"></i>
-                                <div>
-                                    <div class="fw-bold text-dark">Stasiun Parepare</div>
-                                    <div class="text-muted small">ID: GS-03 • Regional</div>
-                                </div>
-                            </div>
-                            <span class="badge bg-green-lt text-green fw-bold rounded-pill px-2.5 py-1">ONLINE</span>
-                        </div>
-                    </div>
+                    @empty
+                    <div class="p-4 text-center text-muted">Belum ada data satelit.</div>
+                    @endforelse
+                </div>
+
+                <div class="p-3 text-center bg-light border-top mt-auto">
+                    <a href="{{ route('satellites.index') }}" class="text-decoration-none text-muted fw-bold" style="font-size: 0.75rem;">
+                        OPEN FULL DIRECTORY <i class="fas fa-external-link-alt ms-1"></i>
+                    </a>
                 </div>
             </div>
-            <div class="card-footer bg-white py-3 text-center border-top mt-auto">
-                <a href="{{ route('ground-stations.index') }}" class="text-primary fw-bold text-decoration-none fs-5">
-                    Lihat Semua Stasiun <i class="fas fa-arrow-right ms-1 fs-6"></i>
-                </a>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="tech-panel h-100">
+                <div class="tech-panel-header">
+                    <h3 class="tech-panel-title">
+                        <i class="fas fa-network-wired text-purple"></i> Earth Control Nodes
+                    </h3>
+                </div>
+
+                <div class="p-4 d-flex flex-column gap-3 bg-light" style="flex-grow: 1;">
+
+                    @forelse(\App\Models\GroundStation::latest()->take(3)->get() as $gs)
+                    <div class="bg-white p-3 border rounded shadow-sm d-flex justify-content-between align-items-center">
+                        <div class="d-flex gap-3 align-items-center">
+                            <div class="bg-green-lt text-green p-2 rounded"><i class="fas fa-satellite-dish"></i></div>
+                            <div>
+                                <div class="fw-bold text-dark" style="font-size: 0.9rem;">{{ $gs->name }}</div>
+                                <div class="text-muted font-monospace" style="font-size: 0.65rem;">GS-NODE-{{ str_pad($gs->id, 2, '0', STR_PAD_LEFT) }}</div>
+                            </div>
+                        </div>
+                        <span class="badge bg-success-lt text-success border border-success px-2 py-1" style="font-size: 0.6rem; letter-spacing: 1px;">LINKED</span>
+                    </div>
+                    @empty
+                    <div class="text-center text-muted py-3">Belum ada stasiun bumi.</div>
+                    @endforelse
+
+                </div>
             </div>
         </div>
-    </div>
-</div>
 
+    </div>
+
+</div>
 @endsection
+
+@push('scripts')
+<script>
+    // Skrip Real-time Clock tetap utuh, tidak disentuh sama sekali
+    setInterval(function() {
+        const now = new Date();
+        const options = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+        document.getElementById('live-clock').innerText = now.toLocaleDateString('id-ID', options).replace(/\./g, ':');
+    }, 1000);
+</script>
+@endpush
